@@ -8,212 +8,138 @@ import sys
 class AppWindow(QMainWindow):
     def __init__(self):   
         super().__init__()
-        self.initUI()
+        self.init_ui()
     
-    def initUI(self):
+    def init_ui(self):
         """Initialize the main window."""
         self.setWindowTitle("GAIA Simulator")
-        self.setGeometryToFullScreen()
-        self.setupUI()
+        self.set_geometry_to_fullscreen()
+        self.setup_ui()
 
-    def setGeometryToFullScreen(self):
-        """Set the window to full screen size."""
+    def set_geometry_to_fullscreen(self):
+        """Set the window to full-screen size."""
         screen = QDesktopWidget().screenGeometry()
         self.setGeometry(0, 0, screen.width(), int(screen.height() * 0.90))
     
-    def setupUI(self):
-        mainWidget = QWidget()
-        self.setCentralWidget(mainWidget)
-        mainLayout = QHBoxLayout()
+    def setup_ui(self):
+        """Set up the UI components."""
+        main_widget = QWidget()
+        self.setCentralWidget(main_widget)
+        main_layout = QHBoxLayout()
         layout1 = QVBoxLayout()
         layout2 = QVBoxLayout()
 
-        controlLabel = QLabel("Control")
-        controlLabel.setFixedHeight(50)
-        controlPanelLayout = QVBoxLayout()
-        controlPanelLayout.addWidget(controlLabel)
+        control_label = QLabel("Control")
+        control_label.setFixedHeight(50)
+        control_panel_layout = QVBoxLayout()
+        control_panel_layout.addWidget(control_label)
 
-        cellLayout = QHBoxLayout()
-        cellTypeComboBox = QComboBox()
-        cellTypeComboBox.setFixedWidth(100)
-        cellTypeComboBox.addItem("NMC")
-        cellTypeComboBox.addItem("LTO")
-        cellTypeComboBox.addItem("LFP")
-        cellTypeComboBox.addItem("LMO")
-        cellTypeComboBox.addItem("NCA")
-        chooseButton = QPushButton("Choose", self)
-        cellLayout.addWidget(cellTypeComboBox)
-        cellLayout.addWidget(chooseButton)
+        # Cell Selection
+        cell_layout = QHBoxLayout()
+        cell_type_combo_box = QComboBox()
+        cell_type_combo_box.setFixedWidth(100)
+        cell_type_combo_box.addItems(["NMC", "LTO", "LFP", "LMO", "NCA"])
+        choose_button = QPushButton("Choose", self)
+        cell_layout.addWidget(cell_type_combo_box)
+        cell_layout.addWidget(choose_button)
 
         # Cell Configurations
-        cellConfigutaionLayout = QHBoxLayout()
-        cellConfiguration = QComboBox()
-        cellConfiguration.setFixedWidth(100)
-        cellConfiguration.addItem("6s74p")
-        cellConfiguration.addItem("8s24p")
-        cellConfiguration.addItem("12s48p")
-        cellConfiguration.addItem("14s96p")
-        cellConfiguration.addItem("16s1p")
-        cellConfiguration.addItem("24s1p")
-        cellConfiguration.addItem("48s1p")
-        cellConfiguration.addItem("96s74p")
-        cellConfiguration.addItem("112s96p")
-        cellConfigurationChoose = QPushButton("Choose", self)
-        cellConfigutaionLayout.addWidget(cellConfiguration)
-        cellConfigutaionLayout.addWidget(cellConfigurationChoose)
+        cell_configuration_layout = QHBoxLayout()
+        cell_configuration = QComboBox()
+        cell_configuration.setFixedWidth(100)
+        cell_configuration.addItems(["6s74p", "8s24p", "12s48p", "14s96p", "16s1p", "24s1p", "48s1p", "96s74p", "112s96p"])
+        cell_configuration_choose = QPushButton("Choose", self)
+        cell_configuration_layout.addWidget(cell_configuration)
+        cell_configuration_layout.addWidget(cell_configuration_choose)
 
-        # C-rate
-        CRateLayout = QVBoxLayout()
-        CRateSliderLabel = QLabel("C-Rate: ")
-        CRateSliderLabel.setFixedHeight(50)
-        CRateSlider = QSlider(Qt.Horizontal)
-        CRateSlider.setRange(1, 50)
-        CRateSlider.setTickInterval(10)
-        CRateSlider.valueChanged.connect(lambda x: CRateSliderLabel.setText(f"C-Rate: {x/10}"))
-        CRateLayout.addWidget(CRateSliderLabel)
-        CRateLayout.addWidget(CRateSlider)
+        # C-rate Slider
+        c_rate_layout = QVBoxLayout()
+        c_rate_slider_label = QLabel("C-Rate: ")
+        c_rate_slider_label.setFixedHeight(50)
+        c_rate_slider = QSlider(Qt.Horizontal)
+        c_rate_slider.setRange(1, 50)
+        c_rate_slider.setTickInterval(10)
+        c_rate_slider.valueChanged.connect(lambda x: c_rate_slider_label.setText(f"C-Rate: {x/10}"))
+        c_rate_layout.addWidget(c_rate_slider_label)
+        c_rate_layout.addWidget(c_rate_slider)
 
+        # SOC Slider
+        soc_slider_layout = QVBoxLayout()
+        soc_slider = QSlider(Qt.Horizontal)
+        soc_slider.setTickInterval(10)
+        soc_slider.setRange(0, 100)
+        soc_slider.setValue(50)  # Default value
+        soc_slider_label = QLabel("SOC (%): 50")
+        soc_slider_label.setFixedHeight(50)
+        soc_slider.valueChanged.connect(lambda x: soc_slider_label.setText(f"SOC (%): {x}"))
+        soc_slider_layout.addWidget(soc_slider_label)
+        soc_slider_layout.addWidget(soc_slider)
 
-        # Slider SOC layout
-        sliderLayout = QVBoxLayout()
-        slider = QSlider(Qt.Horizontal)
-        slider.setTickInterval(10)
-        slider.setRange(0, 100)
-        slider.setValue(50)  # Default value
-        sliderLabel = QLabel("SOC (%): 50")
-        sliderLabel.setFixedHeight(50)
-        slider.valueChanged.connect(
-            lambda x: sliderLabel.setText(f"SOC (%): {x}"))
-        # Add slider and label to the layout
-        sliderLayout.addWidget(sliderLabel)
-        sliderLayout.addWidget(slider)
+        # Voltage Slider
+        voltage_slider_layout = QVBoxLayout()
+        voltage_slider = QSlider(Qt.Horizontal)
+        voltage_slider.setRange(20, 40)
+        voltage_slider.setValue(30)
+        voltage_slider.setTickInterval(5)
+        voltage_slider_label = QLabel("Voltage (V): 3.0")  # Corrected initial value
+        voltage_slider_label.setFixedHeight(50)
+        voltage_slider.valueChanged.connect(lambda x: voltage_slider_label.setText(f"Voltage (V): {x/10:.1f}"))
+        voltage_slider_layout.addWidget(voltage_slider_label)
+        voltage_slider_layout.addWidget(voltage_slider)
 
-        # Slider Voltage layout
-        sliderVoltageLayout = QVBoxLayout()
-        sliderVoltage = QSlider(Qt.Horizontal)
-        sliderVoltage.setRange(20, 40)
-        sliderVoltage.setValue(30)
-        sliderVoltage.setTickInterval(5)
-        sliderVoltageLabel = QLabel("Voltage (V): 3.0")  # Corrected initial value
-        sliderVoltageLabel.setFixedHeight(50)
-        sliderVoltage.valueChanged.connect(
-            lambda x: sliderVoltageLabel.setText(f"Voltage (V): {x/10:.1f}"))
-        # Add voltage slider and label to the layout
-        sliderVoltageLayout.addWidget(sliderVoltageLabel)
-        sliderVoltageLayout.addWidget(sliderVoltage)
+        # Control Buttons
+        button_layout = QHBoxLayout()
+        start_button = QPushButton("Start", self)
+        stop_button = QPushButton("Stop", self)
+        reset_button = QPushButton("Reset", self)
+        button_layout.addWidget(start_button)
+        button_layout.addWidget(stop_button)
+        button_layout.addWidget(reset_button)
 
+        # Save & Load Buttons
+        save_load_layout = QHBoxLayout()
+        save_button = QPushButton("SAVE", self)
+        load_button = QPushButton("LOAD", self)
+        save_load_layout.addWidget(save_button)
+        save_load_layout.addWidget(load_button)
 
-        # Buttons
-        threeButtonLayout = QHBoxLayout()
-        startButton = QPushButton("start", self)
-        stopButton = QPushButton("stop", self)
-        resetButton = QPushButton("reset", self)
-        threeButtonLayout.addWidget(startButton)
-        threeButtonLayout.addWidget(stopButton)
-        threeButtonLayout.addWidget(resetButton)
+        # Ambient Temperature Input
+        temperature_layout = QHBoxLayout()
+        ambient_temperature_input = QLineEdit()
+        ambient_temperature_input.setPlaceholderText("Input your Ambient temperature")
+        apply_button = QPushButton("Apply", self)
+        temperature_layout.addWidget(ambient_temperature_input)
+        temperature_layout.addWidget(apply_button)
 
-        # Save Button
-        ButtonLayout = QHBoxLayout()
-        SaveButton = QPushButton("SAVE", self)
-        SaveButton.setGeometry(200, 0, 150, 40)
-        SaveButton.setStyleSheet("font-family: calibri;")
-        ButtonLayout.addWidget(SaveButton)
+        # Fault Injection Checkboxes
+        fault_injection_layout = QVBoxLayout()
+        overvoltage_checkbox = QCheckBox("Overvoltage")
+        overtemperature_checkbox = QCheckBox("Overtemperature")
+        cell_imbalance_checkbox = QCheckBox("Cell Imbalance")
+        fault_injection_layout.addWidget(overvoltage_checkbox)
+        fault_injection_layout.addWidget(overtemperature_checkbox)
+        fault_injection_layout.addWidget(cell_imbalance_checkbox)
 
-        # Ambient temperature setup
-        temperatureLayout = QHBoxLayout()
-        ambientTemperature = QLineEdit()
-        ambientTemperature.setPlaceholderText("Input your Ambient temperature")
-        applyButton = QPushButton("Apply", self)
-        temperatureLayout.addWidget(ambientTemperature)
-        temperatureLayout.addWidget(applyButton)
+        # Control Panel Assembly
+        control_panel_layout.addLayout(cell_layout)
+        control_panel_layout.addLayout(cell_configuration_layout)
+        control_panel_layout.addLayout(soc_slider_layout)
+        control_panel_layout.addLayout(voltage_slider_layout)
+        control_panel_layout.addLayout(c_rate_layout)
+        control_panel_layout.addLayout(fault_injection_layout)
+        control_panel_layout.addLayout(temperature_layout)
+        control_panel_layout.addStretch()
+        control_panel_layout.addLayout(button_layout)
+        control_panel_layout.addLayout(save_load_layout)
 
-        # Fault Injection
-        faultInjectionLayout = QVBoxLayout()
-
-        # Checkboxes for faults
-        self.overvoltageCheckBox = QCheckBox("Overvoltage")
-        self.overtemperatureCheckBox = QCheckBox("Overtemperature")
-        self.cellImbalanceCheckBox = QCheckBox("Cell Imbalance")
-
-        # Add checkboxes to faultInjectionLayout
-        faultInjectionLayout.addWidget(self.overvoltageCheckBox)
-        faultInjectionLayout.addWidget(self.overtemperatureCheckBox)
-        faultInjectionLayout.addWidget(self.cellImbalanceCheckBox)
-
-        # Load Button
-        loadButton = QPushButton("LOAD", self)
-        loadButton.setGeometry(0, 0, 150, 40)
-        loadButton.setStyleSheet("font-family: calibri;")  # Corrected from SaveButton to loadButton
-        ButtonLayout.addWidget(loadButton)
-
-        # Add all layouts to the control panel
-        controlPanelLayout.addLayout(cellLayout)        
-        controlPanelLayout.addLayout(cellConfigutaionLayout)
-
-        controlPanelLayout.addLayout(sliderLayout)
-        controlPanelLayout.addLayout(sliderVoltageLayout)
-        controlPanelLayout.addLayout(CRateLayout)
-        controlPanelLayout.addLayout(faultInjectionLayout)
-        controlPanelLayout.addLayout(temperatureLayout)
-        controlPanelLayout.addStretch()
-        controlPanelLayout.addLayout(threeButtonLayout)
-        controlPanelLayout.addLayout(ButtonLayout)
-
-        # Analysis and message sections
-        analysisLabel = QLabel("Analysis")
-        analysisLabel.setFixedHeight(50)
-        analysisLayout = QVBoxLayout()
-        analysisLayout.addWidget(analysisLabel)
-        
-        messageLabel = QLabel("Message")
-        messageLabel.setFixedHeight(50)
-        messageLayout = QVBoxLayout()
-        messageLayout.addWidget(messageLabel)
-        
-        analysisFirstRowLayout = QHBoxLayout()
-        analysisSecondRowLayout = QHBoxLayout()
-
-        label1 = QLabel("#1")
-        label1.setFixedHeight(50)
-        label2 = QLabel("#2")
-        label2.setFixedHeight(50)
-        label3 = QLabel("#3")
-        label3.setFixedHeight(50)
-        label4 = QLabel("#4")
-        label4.setFixedHeight(50)
-        label5 = QLabel("#5")
-        label5.setFixedHeight(50)
-        label6 = QLabel("#6")
-        label6.setFixedHeight(50)
-
-        analysisFirstRowLayout.addWidget(label1)
-        analysisFirstRowLayout.addWidget(label2)
-        analysisFirstRowLayout.addWidget(label3)
-        analysisSecondRowLayout.addWidget(label4)
-        analysisSecondRowLayout.addWidget(label5)
-        analysisSecondRowLayout.addWidget(label6)
-
-        analysisLayout.addLayout(analysisFirstRowLayout)
-        analysisLayout.addLayout(analysisSecondRowLayout)
-
-
-        # Combine layouts
-        layout1.addLayout(controlPanelLayout)
-        layout2.addLayout(analysisLayout)
+        # Main Layout Assembly
+        layout1.addLayout(control_panel_layout)
         layout2.addStretch()
-        layout2.addLayout(messageLayout)
-
-        # Set stretch factors
-        layout2.setStretchFactor(messageLayout, 3)
-        layout2.setStretchFactor(analysisLayout, 5)
-
-        mainLayout.addLayout(layout1)
-        mainLayout.addLayout(layout2)
-        mainLayout.setStretchFactor(layout1, 1)
-        mainLayout.setStretchFactor(layout2, 4)
-
-        mainWidget.setLayout(mainLayout)
-
+        main_layout.addLayout(layout1)
+        main_layout.addLayout(layout2)
+        main_layout.setStretchFactor(layout1, 1)
+        main_layout.setStretchFactor(layout2, 4)
+        main_widget.setLayout(main_layout)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

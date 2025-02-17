@@ -1,4 +1,5 @@
 from scipy.interpolate import interp1d
+from .soc_estimation import SOCEstimator
 
 class Cell:
     # Class-level lookup table (shared across all cells)
@@ -35,45 +36,22 @@ class Cell:
         self.thermal_mass = thermal_mass
         self.voltage = nominal_voltage  # Initial voltage
 
-    def update_soc(self, current: float, dt: float):
-        """
-        Update SOC using Coulomb counting with efficiency.
-        - current: Positive for discharge, negative for charge (A)
-        - dt: Time delta in seconds
-        """
-        if current == 0:
-            return
+        self.soc_estimator = SOCEstimator(initial_soc=self.soc)
 
-        # Determine efficiency based on charge/discharge
-        if current > 0:
-            efficiency = self.discharge_efficiency
-        else:
-            efficiency = self.charge_efficiency
-
-        delta_ah = (abs(current) * dt) / 3600  # Ah = A * h
-        delta_soc = (delta_ah / self.capacity) * 100  # SOC change in %
-
-        # Update SOC (add for charge, subtract for discharge)
-        if current > 0:
-            self.soc -= delta_soc * efficiency
-        else:
-            self.soc += delta_soc * efficiency
-
-        # Clamp SOC between 0% and 100%
-        self.soc = max(0.0, min(100.0, self.soc))
-
-        # Update voltage based on new SOC
+    def update_soc(self,measured_voltage, current: float, dt: float):
+        self.soc = self.soc_estimator.update(measured_voltage, current, dt, self.lookup_table[self.cell_type])
         self.update_voltage(current)
 
     def update_voltage(self, current: float):
         """Update terminal voltage using OCV curve and IR drop."""
-        # Get OCV from lookup table
+        self.soc = self.soc_estimator.estimate  # Ensure SOC is updated before calculating voltage
         soc_keys = list(self.lookup_table[self.cell_type].keys())
         closest_soc = min(soc_keys, key=lambda x: abs(x - self.soc))
-        ocv = self.lookup_table[self.cell_type][closest_soc]  # Fixed typo
+        ocv = self.lookup_table[self.cell_type][closest_soc]  
 
         # Calculate terminal voltage (V = OCV - I*R)
         self.voltage = ocv - (current * self.internal_resistance)
+
 
     def update_temperature(self, ambient_temp: float, dt: float):
         """
@@ -82,7 +60,7 @@ class Cell:
         - dt: Time delta in seconds
         """
         # Heat generated (I²R loss)
-        power_loss = (self.current ** 2) * self.internal_resistance  # Watts
+        power_loss = (current ** 2) * self.internal_resistance
         
         # Heat dissipated to ambient (Newton's cooling)
         cooling_rate = 0.1  # W/°C (adjust based on cell design)
@@ -100,10 +78,9 @@ class Cell:
             "temperature": self.temperature,
         }
 
-    def data_prediction(self):
-        """Placeholder for SOC prediction (e.g., Kalman filter)."""
-        pass  # Implement later
-
-    def data_correction(self):
-        """Placeholder for SOC correction (e.g., voltage-based reset)."""
-        pass  # Implement later
+    def data_collection(self):
+        return {
+            "soc": self.soc,
+            "voltage": self.voltage,
+            "temperature": self.temperature,
+        }
