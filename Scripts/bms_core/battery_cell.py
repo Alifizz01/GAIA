@@ -13,14 +13,15 @@ class Cell:
 
     def __init__(
         self,
-        capacity: float,
-        nominal_voltage: float,
-        internal_resistance: float,
+        capacity: float = 3.7,
+        nominal_voltage: float = 3.4,
+        internal_resistance: float = 0.005,
         cell_type: str = "NMC",      # Added cell_type to choose chemistry
         soc: float = 100.0,
         discharge_efficiency: float = 0.98,
         charge_efficiency: float = 0.95,
         thermal_mass: float = 100.0,
+        current = 1
     ):
         if not 0 <= soc <= 100:
             raise ValueError("SOC must be between 0% and 100%!")
@@ -35,6 +36,7 @@ class Cell:
         self.temperature = 25.0
         self.thermal_mass = thermal_mass
         self.voltage = nominal_voltage  # Initial voltage
+        self.current = current
 
         self.soc_estimator = SOCEstimator(initial_soc=self.soc)
 

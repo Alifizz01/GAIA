@@ -6,7 +6,7 @@ def test_soc_estimation():
         60: 3.85, 70: 3.95, 80: 4.05, 90: 4.15, 100: 4.20
     }
     
-    estimator = SOCEstimator(initial_soc=100)
+    estimator = SOCEstimator(initial_soc=75)
     
     # Simulate discharge with 5A over 1 hour
     soc = estimator.update(measured_voltage=3.8, current=5, dt=3600, ocv_lookup=ocv_lookup)
