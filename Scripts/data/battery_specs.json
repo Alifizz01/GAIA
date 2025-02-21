@@ -1,0 +1,63 @@
+{
+    "default": "NMC",
+    "NMC": {
+        "nominal_voltage": 3.7,
+        "nominal_capacity": 50,
+        "internal_resistance": 10e-3,
+        "charge_efficiency": 0.95,
+        "discharge_efficiency": 0.98,
+        "c_rate_max": 3,
+        "ocv_lookup": {
+            "0": 2.50, "10": 3.00, "20": 3.30, "30": 3.50, "40": 3.65, 
+            "50": 3.75, "60": 3.85, "70": 3.95, "80": 4.05, "90": 4.15, "100": 4.20
+        }
+    },
+    "NCA": {
+        "nominal_voltage": 3.7,
+        "nominal_capacity": 40,
+        "internal_resistance": 12e-3,
+        "charge_efficiency": 0.94,
+        "discharge_efficiency": 0.97,
+        "c_rate_max": 3,
+        "ocv_lookup": {
+            "0": 2.70, "10": 3.20, "20": 3.40, "30": 3.55, "40": 3.70, 
+            "50": 3.80, "60": 3.90, "70": 4.00, "80": 4.10, "90": 4.15, "100": 4.20
+        }
+    },
+    "LFP": {
+        "nominal_voltage": 3.2,
+        "nominal_capacity": 100,
+        "internal_resistance": 20e-3,
+        "charge_efficiency": 0.99,
+        "discharge_efficiency": 0.99,
+        "c_rate_max": 5,
+        "ocv_lookup": {
+            "0": 2.00, "10": 2.50, "20": 2.80, "30": 3.00, "40": 3.10, 
+            "50": 3.20, "60": 3.25, "70": 3.30, "80": 3.35, "90": 3.40, "100": 3.45
+        }
+    },
+    "LMO": {
+        "nominal_voltage": 3.7,
+        "nominal_capacity": 30,
+        "internal_resistance": 15e-3,
+        "charge_efficiency": 0.92,
+        "discharge_efficiency": 0.96,
+        "c_rate_max": 2,
+        "ocv_lookup": {
+            "0": 2.50, "10": 3.00, "20": 3.30, "30": 3.50, "40": 3.65, 
+            "50": 3.75, "60": 3.85, "70": 3.95, "80": 4.05, "90": 4.15, "100": 4.20
+        }
+    },
+    "LTO": {
+        "nominal_voltage": 2.4,
+        "nominal_capacity": 30,
+        "internal_resistance": 20e-3,
+        "charge_efficiency": 0.98,
+        "discharge_efficiency": 0.98,
+        "c_rate_max": 10,
+        "ocv_lookup": {
+            "0": 1.80, "10": 2.00, "20": 2.20, "30": 2.30, "40": 2.40, 
+            "50": 2.50, "60": 2.55, "70": 2.60, "80": 2.70, "90": 2.75, "100": 2.80
+        }
+    }
+}
