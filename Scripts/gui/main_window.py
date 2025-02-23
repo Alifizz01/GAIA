@@ -11,12 +11,15 @@ class AppWindow(QMainWindow):
     def __init__(self):   
         super().__init__()
         self.init_ui()
-    
+
     def init_ui(self):
         """Initialize the main window."""
         self.setWindowTitle("GAIA Simulator")
         self.setGeometry(100, 100, 1200, 800)
         self.setup_ui()
+        self.time_data = []
+        self.voltage_data = []
+        self.soc_data = []
 
     def setup_ui(self):
         """Set up the UI components."""
@@ -39,6 +42,7 @@ class AppWindow(QMainWindow):
 
         # Line Edit
         self.ambient_temperature_lineedit = CustomLineEdit(label= "Ambient Temperature")
+        self.simulation_time_lineEdit = CustomLineEdit("Simulation Time")
 
         # Buttons
         self.control_buttons = CustomButton(["Start", "Stop", "Reset"])
@@ -56,6 +60,7 @@ class AppWindow(QMainWindow):
         configuration_panel.addLayout(self.soc_slider)
         configuration_panel.addLayout(self.voltage_slider)
         configuration_panel.addLayout(self.ambient_temperature_lineedit)
+        configuration_panel.addLayout(self.simulation_time_lineEdit)
 
         # Adding to control Panel
         control_panel.addLayout(configuration_panel)
@@ -74,24 +79,38 @@ class AppWindow(QMainWindow):
 
         # Connect Buttons to Functions
         self.control_buttons.get_button("Start").clicked.connect(self.start_simulation)
-
+    
     def start_simulation(self):
-        """Simulate data and update graphs"""
-        time_data = np.linspace(0, 100, 100)
-        soc_data = np.linspace(100, 0, 100)
-        voltage_data = np.linspace(4.2, 3.0, 100)
+        try:
+            # Get simulation time input and convert to integer safely
+            simu_time_str = self.simulation_time_lineEdit.get_text()
+            simu_time_int = int(simu_time_str)  # Convert to integer
+
+            # Generate time array
+            self.time_data = np.arange(0, simu_time_int, 1)
+
+            # For now, simulate SOC and voltage drop over time
+            self.soc_data = np.linspace(100, 10, simu_time_int)  # Fake SOC decreasing
+            self.voltage_data = np.linspace(4.2, 3.0, simu_time_int)  # Fake voltage drop
+
+            # Update Graphs
+            self.soc_graph.update_plot(self.time_data, self.soc_data)
+            self.voltage_graph.update_plot(self.time_data, self.voltage_data)
         
-        self.soc_graph.update_plot(time_data, soc_data)
-        self.voltage_graph.update_plot(time_data, voltage_data)
+        except ValueError:
+            print("Invalid input for simulation time! Please enter a valid number.")
+
 
     def get_data(self):
         """Retrieve user input from GUI"""
         user_data = {
+            "Model Type": self.model_type.get_value(),
             "Cell Type": self.cell_type.get_value(),
             "Cell Configuration": self.cell_config.get_value(),
             "C-Rate": self.c_rate_slider.get_value(),
             "SOC (%)": self.soc_slider.get_value(),
             "Voltage (V)": self.voltage_slider.get_value(),
+            "Simulation Time" : self.simulation_time_lineEdit.get_text()
         }
         print("User Inputs:", user_data)
         return user_data

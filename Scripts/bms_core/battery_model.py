@@ -36,7 +36,7 @@ class BatteryModel:
 
 # Example Usage
 battery = BatteryModel(model_type="SPMe", chemistry="LFP")
-solution = battery.run_simulation(3600)
+solution = battery.run_simulation(100)
 voltage = battery.get_voltage(solution)
 
 print(f"Final voltage: {voltage[-1]:.2f}V")
