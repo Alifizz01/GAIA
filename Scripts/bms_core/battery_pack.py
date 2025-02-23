@@ -2,7 +2,7 @@ import os
 import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))  # Ensure correct module import
-from bms_core.battery_cell import Cell,   # type: ignore
+from bms_core.battery_cell import Cell  # type: ignore
 
 class BatteryPack:
     def __init__(self, series_number=5, parallel_number=5, chemistry="NCA"):

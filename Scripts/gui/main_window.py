@@ -1,9 +1,11 @@
-from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QSlider, QLabel, 
-    QDesktopWidget, QPushButton, QHBoxLayout, QLineEdit, QComboBox, QCheckBox
-)
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout
 import sys
+import os
+import numpy as np
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from gui.widget_class import CustomComboBox, CustomSlider, CustomButton, CustomGraph, CustomLineEdit
 
 class AppWindow(QMainWindow):
     def __init__(self):   
@@ -13,133 +15,86 @@ class AppWindow(QMainWindow):
     def init_ui(self):
         """Initialize the main window."""
         self.setWindowTitle("GAIA Simulator")
-        self.set_geometry_to_fullscreen()
+        self.setGeometry(100, 100, 1200, 800)
         self.setup_ui()
 
-    def set_geometry_to_fullscreen(self):
-        """Set the window to full-screen size."""
-        screen = QDesktopWidget().screenGeometry()
-        self.setGeometry(0, 0, screen.width(), int(screen.height() * 0.90))
-    
     def setup_ui(self):
         """Set up the UI components."""
-        main_widget = QWidget()
-        self.setCentralWidget(main_widget)
-        main_layout = QHBoxLayout()
-        layout1 = QVBoxLayout()
-        layout2 = QVBoxLayout()
+        self.main_widget = QWidget()
+        self.setCentralWidget(self.main_widget)
+        self.main_layout = QHBoxLayout()
 
-        control_label = QLabel("Control")
-        control_label.setFixedHeight(50)
-        control_panel_layout = QVBoxLayout()
-        control_panel_layout.addWidget(control_label)
+        control_panel = QVBoxLayout()
+        configuration_panel = QVBoxLayout()
+        # Dropdowns
+        self.cell_type = CustomComboBox("Cell Type", ["NMC", "LTO", "LFP", "LMO", "NCA"])
+        self.model_type = CustomComboBox("Model", ["SPM", "SPMe", "DFN"])
+        self.cell_config = CustomComboBox("Cell Config", ["6s74p", "8s24p", "12s48p", "14s96p", "16s1p"])
+        self.mode_config = CustomComboBox("Charging/Discharging Mode", ["Charging", "Discharging"])
 
-        # Cell Selection
-        cell_layout = QHBoxLayout()
-        cell_type_combo_box = QComboBox()
-        cell_type_combo_box.setFixedWidth(100)
-        cell_type_combo_box.addItems(["NMC", "LTO", "LFP", "LMO", "NCA"])
-        choose_button = QPushButton("Choose", self)
-        cell_layout.addWidget(cell_type_combo_box)
-        cell_layout.addWidget(choose_button)
+        # Sliders
+        self.c_rate_slider = CustomSlider("C-Rate", 1, 50, 10, 0)
+        self.soc_slider = CustomSlider("SOC (%)", 0, 100, 10, 0)
+        self.voltage_slider = CustomSlider("Voltage (V)", 20, 40, 5, 0)
 
-        # Cell Configurations
-        cell_configuration_layout = QHBoxLayout()
-        cell_configuration = QComboBox()
-        cell_configuration.setFixedWidth(100)
-        cell_configuration.addItems(["6s74p", "8s24p", "12s48p", "14s96p", "16s1p", "24s1p", "48s1p", "96s74p", "112s96p"])
-        cell_configuration_choose = QPushButton("Choose", self)
-        cell_configuration_layout.addWidget(cell_configuration)
-        cell_configuration_layout.addWidget(cell_configuration_choose)
+        # Line Edit
+        self.ambient_temperature_lineedit = CustomLineEdit(label= "Ambient Temperature")
 
-        # C-rate Slider
-        c_rate_layout = QVBoxLayout()
-        c_rate_slider_label = QLabel("C-Rate: ")
-        c_rate_slider_label.setFixedHeight(50)
-        c_rate_slider = QSlider(Qt.Horizontal)
-        c_rate_slider.setRange(1, 50)
-        c_rate_slider.setTickInterval(10)
-        c_rate_slider.valueChanged.connect(lambda x: c_rate_slider_label.setText(f"C-Rate: {x/10}"))
-        c_rate_layout.addWidget(c_rate_slider_label)
-        c_rate_layout.addWidget(c_rate_slider)
+        # Buttons
+        self.control_buttons = CustomButton(["Start", "Stop", "Reset"])
 
-        # SOC Slider
-        soc_slider_layout = QVBoxLayout()
-        soc_slider = QSlider(Qt.Horizontal)
-        soc_slider.setTickInterval(10)
-        soc_slider.setRange(0, 100)
-        soc_slider.setValue(50)  # Default value
-        soc_slider_label = QLabel("SOC (%): 50")
-        soc_slider_label.setFixedHeight(50)
-        soc_slider.valueChanged.connect(lambda x: soc_slider_label.setText(f"SOC (%): {x}"))
-        soc_slider_layout.addWidget(soc_slider_label)
-        soc_slider_layout.addWidget(soc_slider)
+        # Graphs
+        self.soc_graph = CustomGraph("SOC vs Time", "Time (s)", "SOC (%)")
+        self.voltage_graph = CustomGraph("Voltage vs Time", "Time (s)", "Voltage (V)")
 
-        # Voltage Slider
-        voltage_slider_layout = QVBoxLayout()
-        voltage_slider = QSlider(Qt.Horizontal)
-        voltage_slider.setRange(20, 40)
-        voltage_slider.setValue(30)
-        voltage_slider.setTickInterval(5)
-        voltage_slider_label = QLabel("Voltage (V): 3.0")  # Corrected initial value
-        voltage_slider_label.setFixedHeight(50)
-        voltage_slider.valueChanged.connect(lambda x: voltage_slider_label.setText(f"Voltage (V): {x/10:.1f}"))
-        voltage_slider_layout.addWidget(voltage_slider_label)
-        voltage_slider_layout.addWidget(voltage_slider)
+        # Adding to configuration Panel
+        configuration_panel.addLayout(self.model_type)
+        configuration_panel.addLayout(self.cell_type)
+        configuration_panel.addLayout(self.cell_config)
+        configuration_panel.addLayout(self.mode_config)
+        configuration_panel.addLayout(self.c_rate_slider)
+        configuration_panel.addLayout(self.soc_slider)
+        configuration_panel.addLayout(self.voltage_slider)
+        configuration_panel.addLayout(self.ambient_temperature_lineedit)
 
-        # Control Buttons
-        button_layout = QHBoxLayout()
-        start_button = QPushButton("Start", self)
-        stop_button = QPushButton("Stop", self)
-        reset_button = QPushButton("Reset", self)
-        button_layout.addWidget(start_button)
-        button_layout.addWidget(stop_button)
-        button_layout.addWidget(reset_button)
-
-        # Save & Load Buttons
-        save_load_layout = QHBoxLayout()
-        save_button = QPushButton("SAVE", self)
-        load_button = QPushButton("LOAD", self)
-        save_load_layout.addWidget(save_button)
-        save_load_layout.addWidget(load_button)
-
-        # Ambient Temperature Input
-        temperature_layout = QHBoxLayout()
-        ambient_temperature_input = QLineEdit()
-        ambient_temperature_input.setPlaceholderText("Input your Ambient temperature")
-        apply_button = QPushButton("Apply", self)
-        temperature_layout.addWidget(ambient_temperature_input)
-        temperature_layout.addWidget(apply_button)
-
-        # Fault Injection Checkboxes
-        fault_injection_layout = QVBoxLayout()
-        overvoltage_checkbox = QCheckBox("Overvoltage")
-        overtemperature_checkbox = QCheckBox("Overtemperature")
-        cell_imbalance_checkbox = QCheckBox("Cell Imbalance")
-        fault_injection_layout.addWidget(overvoltage_checkbox)
-        fault_injection_layout.addWidget(overtemperature_checkbox)
-        fault_injection_layout.addWidget(cell_imbalance_checkbox)
-
-        # Control Panel Assembly
-        control_panel_layout.addLayout(cell_layout)
-        control_panel_layout.addLayout(cell_configuration_layout)
-        control_panel_layout.addLayout(soc_slider_layout)
-        control_panel_layout.addLayout(voltage_slider_layout)
-        control_panel_layout.addLayout(c_rate_layout)
-        control_panel_layout.addLayout(fault_injection_layout)
-        control_panel_layout.addLayout(temperature_layout)
-        control_panel_layout.addStretch()
-        control_panel_layout.addLayout(button_layout)
-        control_panel_layout.addLayout(save_load_layout)
+        # Adding to control Panel
+        control_panel.addLayout(configuration_panel)
+        control_panel.addStretch()
+        control_panel.addLayout(self.control_buttons)
 
         # Main Layout Assembly
-        layout1.addLayout(control_panel_layout)
-        layout2.addStretch()
-        main_layout.addLayout(layout1)
-        main_layout.addLayout(layout2)
-        main_layout.setStretchFactor(layout1, 1)
-        main_layout.setStretchFactor(layout2, 4)
-        main_widget.setLayout(main_layout)
+        graph_panel = QVBoxLayout()
+        graph_panel.addLayout(self.soc_graph)
+        graph_panel.addLayout(self.voltage_graph)
+
+        self.main_layout.addLayout(control_panel)
+        self.main_layout.addLayout(graph_panel)
+        self.main_layout.setStretchFactor(graph_panel, 3)
+        self.main_widget.setLayout(self.main_layout)
+
+        # Connect Buttons to Functions
+        self.control_buttons.get_button("Start").clicked.connect(self.start_simulation)
+
+    def start_simulation(self):
+        """Simulate data and update graphs"""
+        time_data = np.linspace(0, 100, 100)
+        soc_data = np.linspace(100, 0, 100)
+        voltage_data = np.linspace(4.2, 3.0, 100)
+        
+        self.soc_graph.update_plot(time_data, soc_data)
+        self.voltage_graph.update_plot(time_data, voltage_data)
+
+    def get_data(self):
+        """Retrieve user input from GUI"""
+        user_data = {
+            "Cell Type": self.cell_type.get_value(),
+            "Cell Configuration": self.cell_config.get_value(),
+            "C-Rate": self.c_rate_slider.get_value(),
+            "SOC (%)": self.soc_slider.get_value(),
+            "Voltage (V)": self.voltage_slider.get_value(),
+        }
+        print("User Inputs:", user_data)
+        return user_data
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

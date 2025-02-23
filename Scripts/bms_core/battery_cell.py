@@ -26,7 +26,7 @@ def get_battery_chemistry(chemistry=None):
 class Cell:
     def __init__(
         self,
-        soc: float = 100.0,
+        soc: float = 20.0,
         chemistry=None,
         thermal_mass: float = 100.0,  # ✅ Can be modified based on chemistry
         c_rate=1
