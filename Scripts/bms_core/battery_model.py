@@ -1,27 +1,25 @@
+import numpy as np
 import pybamm
 
 class BatteryModel:
-    # Define available battery chemistries
     CHEMISTRY_PARAMETERS = {
-        "NMC": pybamm.ParameterValues("Chen2020"),  # NMC battery parameters
-        "LFP": pybamm.ParameterValues("Marquis2019"),  # LFP parameters
-        "NCA": pybamm.ParameterValues("Ecker2015"),  # NCA parameters
+        "NMC": pybamm.ParameterValues("Chen2020"),
+        "LFP": pybamm.ParameterValues("Marquis2019"),
+        "NCA": pybamm.ParameterValues("Ecker2015"),
     }
 
     def __init__(self, model_type="SPM", chemistry="NMC"):
         """Initialize a battery model using PyBaMM"""
         self.chemistry = chemistry
-        self.parameter_values = self.CHEMISTRY_PARAMETERS.get(chemistry, pybamm.ParameterValues("Chen2020"))  # Default to NMC
-        
-        # Define model based on user input
+        self.parameter_values = self.CHEMISTRY_PARAMETERS.get(chemistry, pybamm.ParameterValues("Chen2020"))
+
         model_classes = {
             "SPM": pybamm.lithium_ion.SPM,
             "SPMe": pybamm.lithium_ion.SPMe,
             "DFN": pybamm.lithium_ion.DFN,
         }
-        self.model = model_classes.get(model_type, pybamm.lithium_ion.SPM)()  # Default to SPM
+        self.model = model_classes.get(model_type, pybamm.lithium_ion.SPM)()
 
-        # Attach chemistry parameters to the model
         self.simulation = pybamm.Simulation(self.model, parameter_values=self.parameter_values)
 
     def run_simulation(self, duration=3600):
@@ -29,14 +27,12 @@ class BatteryModel:
         solution = self.simulation.solve([0, duration])
         return solution
 
-    def get_voltage(self, solution):
-        """Extract voltage from the simulation results"""
-        return solution["Terminal voltage [V]"].entries
+    def get_voltage(self, solution, time_data):
+        """Extract voltage and resample it to match `time_data`"""
+        original_time = solution["Time [s]"].entries  # Extract original time points
+        original_voltage = solution["Terminal voltage [V]"].entries  # Extract original voltage values
 
-
-# Example Usage
-battery = BatteryModel(model_type="SPMe", chemistry="LFP")
-solution = battery.run_simulation(100)
-voltage = battery.get_voltage(solution)
-
-print(f"Final voltage: {voltage[-1]:.2f}V")
+        # Resample voltage values to match `time_data`
+        self.sampled_voltage = np.interp(time_data, original_time, original_voltage)
+        
+        return self.sampled_voltage
