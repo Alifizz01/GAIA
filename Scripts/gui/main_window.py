@@ -2,7 +2,6 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHB
 from PyQt5.QtCore import QTimer
 import sys
 import os
-import time  # For real-time simulation control
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -14,8 +13,6 @@ class AppWindow(QMainWindow):
         super().__init__()
         self.init_ui()
         self.simulator_manager = None  # Will be initialized when simulation starts
-        self.simulation_running = False  # Flag to control real-time updates
-        self.current_time_step = 0  # Tracks elapsed time in simulation
 
     def init_ui(self):
         """Initialize the main window."""
@@ -50,6 +47,12 @@ class AppWindow(QMainWindow):
 
         # Graphs
         self.voltage_graph = CustomGraph("Voltage vs Time", "Time (s)", "Voltage (V)")
+        self.soc_graph = CustomGraph("SOC vs Time", "Time (s)", "SOC (%)")
+        self.soh_graph = CustomGraph("SOH vs Time", "Time (s)", "SOH (%)")
+
+        self.capacity_graph = CustomGraph("Capacity vs Time", "Time (s)", "Capacity (Ah)")
+        self.internal_resistance_graph = CustomGraph("Internal Resistance vs Time", "Time (s)", "Internal Resistance (Ohm)")
+        self.temperature_graph = CustomGraph("Temperature vs Time", "Time (s)", "Temperature (K)")
 
         # Add to UI Layouts
         configuration_panel.addLayout(self.model_type)
@@ -63,25 +66,34 @@ class AppWindow(QMainWindow):
         control_panel.addLayout(configuration_panel)
         control_panel.addStretch()
         control_panel.addLayout(self.control_buttons)
-
+        
         graph_panel = QVBoxLayout()
-        graph_panel.addLayout(self.voltage_graph)
+
+        graph_panel2 = QHBoxLayout()
+        graph_panel2.addLayout(self.voltage_graph)
+        graph_panel2.addLayout(self.soc_graph)
+        graph_panel2.addLayout(self.soh_graph)
+        graph_panel1 = QHBoxLayout()
+        graph_panel1.addLayout(self.capacity_graph)
+        graph_panel1.addLayout(self.internal_resistance_graph)
+        graph_panel1.addLayout(self.temperature_graph)
+
+        graph_panel.addLayout(graph_panel1)
+        graph_panel.addLayout(graph_panel2)
 
         self.main_layout.addLayout(control_panel)
         self.main_layout.addLayout(graph_panel)
-        self.main_layout.setStretchFactor(graph_panel, 3)
         self.main_widget.setLayout(self.main_layout)
 
         # Connect Buttons
         self.control_buttons.get_button("Start").clicked.connect(self.start_simulation)
-        self.control_buttons.get_button("Stop").clicked.connect(self.stop_simulation)
 
-        # Timer for Real-Time Updates
+        # Timer for Updating Graphs
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_graph)
 
     def start_simulation(self):
-        """Fetch GUI inputs and run the simulation in real-time."""
+        """Fetch GUI inputs and run the simulation."""
         try:
             simu_time_str = self.simulation_time_lineEdit.get_text()
             simu_time_int = int(simu_time_str)  # Convert to integer
@@ -94,34 +106,21 @@ class AppWindow(QMainWindow):
             self.simulator_manager = SimulatorManager(model_type, chemistry)
             self.simulator_manager.run_battery_simulation(simu_time_int)
 
-            # Start real-time simulation
-            self.simulation_running = True
-            self.current_time_step = 0  # Reset simulation time tracking
-
-            # Start timer to update graph in real-time (1000ms = 1 second)
+            # Start timer to update graph
             self.timer.start(1000)
 
         except ValueError:
             print("Invalid input! Please enter a valid number.")
 
-    def stop_simulation(self):
-        """Stop real-time updates"""
-        self.simulation_running = False
-        self.timer.stop()
-
     def update_graph(self):
-        """Update the graph in real-time, one second at a time."""
-        if self.simulation_running:
-            time_data, voltage_data = self.simulator_manager.get_simulation_results()
+        """Retrieve simulation data and update the graph."""
+        if self.simulator_manager:
+            time_data, voltage_data, soc_data, temperature_data = self.simulator_manager.get_simulation_results()
 
-            # Check if there’s still data to plot
-            if self.current_time_step < len(time_data):
-                # Plot only up to the current time step
-                self.voltage_graph.update_plot(time_data[:self.current_time_step], voltage_data[:self.current_time_step])
-                self.current_time_step += 1  # Move forward one second
-            else:
-                # Stop the simulation if we reach the end
-                self.stop_simulation()
+            if len(time_data) > 0:
+                self.voltage_graph.update_plot(time_data, voltage_data)
+                self.soc_graph.update_plot(time_data, soc_data)
+                self.temperature_graph.update_plot(time_data, temperature_data)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

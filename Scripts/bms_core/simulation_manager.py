@@ -12,6 +12,8 @@ class SimulatorManager:
         self.battery_model = BatteryModel(model_type, chemistry)
         self.time_data = []
         self.voltage_data = []
+        self.soc_data = []
+        self.ambient_temperature = []
 
     def run_battery_simulation(self, duration=10000):
         """
@@ -26,7 +28,8 @@ class SimulatorManager:
 
         # Retrieve resampled voltage data
         self.voltage_data = self.battery_model.get_voltage(solution, self.time_data)
+        self.soc_data = self.battery_model.get_soc(solution, self.time_data)
 
     def get_simulation_results(self):
         """Returns the stored time series and voltage data."""
-        return self.time_data, self.voltage_data
+        return self.time_data, self.voltage_data, self.soc_data, self.ambient_temperature
