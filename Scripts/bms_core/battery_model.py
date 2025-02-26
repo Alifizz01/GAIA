@@ -8,25 +8,33 @@ class BatteryModel:
         "NCA": pybamm.ParameterValues("Ecker2015"),
     }
 
-    def __init__(self, model_type="SPM", chemistry="NMC"):
-        """Initialize a battery model using PyBaMM"""
+    def __init__(self, model_type="SPM", chemistry="NMC", initial_temperature=298.15):
         self.chemistry = chemistry
-        self.parameter_values = self.CHEMISTRY_PARAMETERS.get(chemistry, pybamm.ParameterValues("Chen2020"))
+        self.model_type = model_type
+        self.parameter_values = self.CHEMISTRY_PARAMETERS.get(chemistry, pybamm.ParameterValues("Chen2020")).copy()
+        self.parameter_values.update({"Initial temperature [K]": float(initial_temperature)})
+        self._setup_model_and_simulation()  # Initialize model/simulation
 
+    def _setup_model_and_simulation(self):
+        """Recreate model and simulation with current parameters."""
         model_classes = {
             "SPM": pybamm.lithium_ion.SPM,
             "SPMe": pybamm.lithium_ion.SPMe,
             "DFN": pybamm.lithium_ion.DFN,
         }
-        self.model = model_classes.get(model_type, pybamm.lithium_ion.SPM)()
-
+        self.model = model_classes.get(self.model_type, pybamm.lithium_ion.SPM)()
         self.simulation = pybamm.Simulation(self.model, parameter_values=self.parameter_values)
 
+    def change_temperature(self, new_temperature):
+        """Update temperature and rebuild model/simulation."""
+        self.parameter_values.update({"Initial temperature [K]": new_temperature})
+        self._setup_model_and_simulation()  # Reinitialize after parameter change
+
     def run_simulation(self, duration=3600):
-        """Run the battery simulation for a given time duration (in seconds)"""
+        """Run simulation with the latest parameters."""
         solution = self.simulation.solve([0, duration])
         return solution
-
+    
     def get_voltage(self, solution, time_data):
         """Extract voltage and resample it to match `time_data`"""
         original_time = solution["Time [s]"].entries  # Extract original time points
@@ -61,18 +69,18 @@ class BatteryModel:
         """Extract and interpolate battery temperature from PyBaMM solution."""
         
         original_time = solution["Time [s]"].entries  # Simulation time points
-        
-        # Try to get temperature from PyBaMM solution
-        try:
-            original_temperature = solution["Cell temperature [K]"].entries  # Prefer cell temp over ambient temp
-        except KeyError:
-            # Fallback to ambient temperature if cell temperature isn't available
-            original_temperature = solution["Ambient temperature [K]"].entries
+        original_temperature = solution["Volume-averaged cell temperature [K]"].entries
         
         # Interpolate temperature values to match `time_data`
         interpolated_temperature = np.interp(time_data, original_time, original_temperature)
 
-        # Clamp temperature to prevent unrealistic values (assume 0°C to 100°C range)
-        interpolated_temperature = np.clip(interpolated_temperature, 273.15, 373.15)  # Kelvin (0°C to 100°C)
-
         return interpolated_temperature
+
+    def get_current(self, solution, time_data):
+
+        original_time = solution["Time [s]"].entries  # Simulation time points
+        original_current = solution["Current [A]"].entries
+
+        sampled_current = np.interp(time_data, original_time, original_current)
+
+        return sampled_current
