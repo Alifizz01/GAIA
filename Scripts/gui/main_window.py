@@ -13,6 +13,7 @@ class AppWindow(QMainWindow):
         super().__init__()
         self.init_ui()
         self.simulator_manager = None  # Will be initialized when simulation starts
+        self.simulation_running = False  # Flag to track simulation status
 
     def init_ui(self):
         """Initialize the main window."""
@@ -30,6 +31,7 @@ class AppWindow(QMainWindow):
         configuration_panel = QVBoxLayout()
         
         # Dropdowns
+        self.simulation_mode = CustomComboBox("Simulation Mode", ["Manual Parameter Mode", "Experiment Mode"])
         self.cell_type = CustomComboBox("Cell Type", ["NMC", "LFP", "NCA"])
         self.model_type = CustomComboBox("Model", ["SPM", "SPMe", "DFN"])
         self.cell_config = CustomComboBox("Cell Config", ["6s74p", "8s24p", "12s48p", "14s96p", "16s1p"])
@@ -41,7 +43,7 @@ class AppWindow(QMainWindow):
 
         # Line Edit
         self.simulation_time_lineEdit = CustomLineEdit("Simulation Time")
-        self.initial_temperature_lineEdit = CustomLineEdit("Temperature Time")
+        self.initial_temperature_lineEdit = CustomLineEdit("Initial Temperature")
 
         # Buttons
         self.control_buttons = CustomButton(["Start", "Stop", "Reset"])
@@ -50,12 +52,12 @@ class AppWindow(QMainWindow):
         self.voltage_graph = CustomGraph("Voltage vs Time", "Time (s)", "Voltage (V)")
         self.soc_graph = CustomGraph("SOC vs Time", "Time (s)", "SOC (%)")
         self.soh_graph = CustomGraph("SOH vs Time", "Time (s)", "SOH (%)")
-
         self.current_graph = CustomGraph("Current vs Time", "Time (s)", "Current (A)")
         self.internal_resistance_graph = CustomGraph("Internal Resistance vs Time", "Time (s)", "Internal Resistance (Ohm)")
         self.temperature_graph = CustomGraph("Temperature vs Time", "Time (s)", "Temperature (K)")
 
         # Add to UI Layouts
+        configuration_panel.addLayout(self.simulation_mode)
         configuration_panel.addLayout(self.model_type)
         configuration_panel.addLayout(self.cell_type)
         configuration_panel.addLayout(self.cell_config)
@@ -98,24 +100,30 @@ class AppWindow(QMainWindow):
         """Fetch GUI inputs and run the simulation."""
         try:
             simu_time_int = int(self.simulation_time_lineEdit.get_text().strip())
-            temp_str = self.initial_temperature_lineEdit.get_text().strip()  # Ensure clean input
+            temp_str = self.initial_temperature_lineEdit.get_text().strip()
             
-            if temp_str == "" or temp_str is None:
-                initial_temperature = 298.15  # Default to 25°C in Kelvin
-            else:
-                initial_temperature = float(temp_str)  # Convert to single float
-
+            initial_temperature = 298.15 if not temp_str else float(temp_str)
             model_type = self.model_type.get_value()
             chemistry = self.cell_type.get_value()
-            c_rate = self.c_rate_slider.get_value()
+            simulation_mode = self.simulation_mode.get_value()
 
-            print(f"Simulation Time: {simu_time_int}, Initial Temp: {initial_temperature}, Model: {model_type}, Chemistry: {chemistry}")
+            print(f"Simulation Time: {simu_time_int}, Initial Temp: {initial_temperature}, Model: {model_type}, Chemistry: {chemistry}, Mode: {simulation_mode}")
 
-            # Initialize Simulator Manager with user-selected temperature
+            # Initialize Simulator Manager
             self.simulator_manager = SimulatorManager(model_type, chemistry, initial_temperature)
-            self.simulator_manager.run_battery_simulation(simu_time_int)
 
-            # Start timer to update graph
+            if simulation_mode == "Experiment Mode":
+                experiment_loaded = self.simulator_manager.load_experiment()
+                if experiment_loaded is not None:
+                    print("Experiment loaded successfully.")
+                else:
+                    print("Error loading experiment. Simulation aborted.")
+                    return
+            else:
+                self.simulator_manager.run_battery_simulation(simu_time_int)
+
+            # Start real-time graph updates
+            self.simulation_running = True
             self.timer.start(1000)
 
         except ValueError as e:
@@ -124,7 +132,7 @@ class AppWindow(QMainWindow):
 
     def update_graph(self):
         """Retrieve simulation data and update the graph."""
-        if self.simulator_manager:
+        if self.simulator_manager and self.simulation_running:
             time_data, voltage_data, soc_data, temperature_data, current_data = self.simulator_manager.get_simulation_results()
 
             if len(time_data) > 0:
@@ -133,26 +141,18 @@ class AppWindow(QMainWindow):
                 self.temperature_graph.update_plot(time_data, temperature_data)
                 self.current_graph.update_plot(time_data, current_data)
 
+                print(f"Graph updated: Time steps = {len(time_data)}")
+
     def stop_simulation(self):
         if self.simulator_manager:
-            print("simulation stopped!")
-            self.simulator_manager.run_battery_simulation = False
+            print("Simulation stopped!")
+            self.simulation_running = False
+            self.timer.stop()
 
     def reset_simulation(self):
         if self.simulator_manager:
             print("Resetting Simulation...")
             self.stop_simulation()
-
-            self.simulator_manager.time_data = []
-            self.simulator_manager.voltage_data = []
-            self.simulator_manager.soc_data = []
-            self.simulator_manager.temperature_data = []
-
-            # Clear Graphs
-            self.voltage_graph.update_plot([], [])
-            self.soc_graph.update_plot([], [])
-
-            # Reinitialize SimulatorManager for the next simulation
             self.simulator_manager = None
 
 if __name__ == "__main__":

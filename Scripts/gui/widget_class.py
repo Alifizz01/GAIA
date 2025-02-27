@@ -4,7 +4,7 @@ import pyqtgraph as pg
 
 # Class for Dropdown (ComboBox)
 class CustomComboBox(QVBoxLayout):
-    def __init__(self, label_text, options, width=100):
+    def __init__(self, label_text, options, width=300):
         super().__init__()
         self.label = QLabel(label_text)
         self.combo_box = QComboBox()
@@ -89,3 +89,4 @@ class CustomGraph(QVBoxLayout):
 
     def update_plot(self, x_data, y_data):
         self.graph.plot(x_data, y_data, clear=True)
+        self.graph.repaint()  # Force UI refresh
