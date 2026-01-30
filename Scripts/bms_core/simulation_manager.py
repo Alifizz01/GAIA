@@ -38,9 +38,8 @@ class SimulatorManager:
         """Update battery model parameters dynamically."""
         self.battery_model.change_parameters(parameter_name, new_value)
 
-
     def load_experiment(self, filename="test_profile.json"):
-        """Loads an experiment profile from a JSON file and runs it in PyBaMM."""
+        """Loads a driving experiment profile and runs it in PyBaMM."""
         file_path = os.path.join(self.test_profile_directory, filename)
 
         if not os.path.exists(file_path):
@@ -61,25 +60,39 @@ class SimulatorManager:
             print("ERROR: No experiment steps found in JSON file!")
             return None
 
-        # Convert JSON experiment steps to PyBaMM Experiment format
+        # Create PyBaMM Experiment
         try:
             experiment = pybamm.Experiment(experiment_steps * repeat)
-            print(f"SUCCESS: Experiment loaded -> {experiment_steps}")
+            print(f"SUCCESS: Loaded driving experiment -> {experiment_steps}")
         except Exception as e:
             print(f"ERROR: Failed to create PyBaMM Experiment -> {e}")
             return None
 
-        # Update battery model with experiment
+        # Update BatteryModel to experiment mode
+        self.battery_model.simulation_mode = "Experiment Mode"
+        self.battery_model.experiment = experiment
+        
+        # Rebuild simulation with experiment
         self.battery_model.simulation = pybamm.Simulation(self.battery_model.model, 
                                                         parameter_values=self.battery_model.parameter_values, 
                                                         experiment=experiment)
-
-        self.run_experiment_simulation()
-        return True  # Indicate success
-
+        
+        # Run the experiment simulation
+        try:
+            self.run_experiment_simulation()
+            return True
+        except Exception as e:
+            print(f"ERROR: Failed to run experiment simulation -> {e}")
+            return None
 
     def run_experiment_simulation(self):
         """Runs an experiment simulation and updates stored results."""
+        if not hasattr(self.battery_model, 'simulation') or self.battery_model.simulation is None:
+            raise ValueError("Simulation not initialized. Load experiment first.")
+        
+        if self.battery_model.simulation_mode != "Experiment Mode":
+            raise ValueError("Simulation is not in Experiment Mode.")
+        
         solution = self.battery_model.simulation.solve()
 
         # Store time-series results
