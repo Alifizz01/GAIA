@@ -1,0 +1,46 @@
+{
+    "battery": {
+        "chemistry": "NMC",
+        "model_type": "SPM",
+        "nominal_capacity": 50.0,
+        "nominal_voltage": 3.7,
+        "initial_temperature": 298.15,
+        "initial_soc": 100.0
+    },
+    "pack": {
+        "cells_in_series": 16,
+        "cells_in_parallel": 1,
+        "balancing_enabled": true,
+        "balancing_method": "passive",
+        "balancing_threshold": 0.02
+    },
+    "simulation": {
+        "duration": 3600,
+        "time_step": 1.0,
+        "simulation_mode": "Manual Parameter Mode",
+        "experiment_file": null
+    },
+    "soc_estimation": {
+        "method": "aekf",
+        "coulombic_efficiency": 0.98,
+        "process_noise": 0.001,
+        "measurement_noise": 0.01
+    },
+    "fault_injection": {
+        "enabled": false,
+        "scenario": null
+    },
+    "logging": {
+        "enabled": true,
+        "log_directory": "logs",
+        "log_format": "csv",
+        "log_interval": 1.0
+    },
+    "scalability": {
+        "parallel_processing": false,
+        "max_workers": 4,
+        "batch_size": 100,
+        "cache_enabled": true
+    }
+}
+

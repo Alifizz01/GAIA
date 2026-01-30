@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # GAIA BMS Framework - Required Dependencies
 # Core Scientific Computing
 numpy>=1.21.0
@@ -37,3 +38,44 @@ pytest-cov>=3.0.0
 sphinx>=4.0.0
 sphinx-rtd-theme>=1.0.0
 
+=======
+# GAIA BMS Framework - Required Dependencies
+# Core Scientific Computing
+numpy>=1.21.0
+scipy>=1.7.0
+
+# Battery Modeling
+# IMPORTANT: PyBaMM supports Python 3.9-3.12 only. For Python 3.13+, use Python 3.12 instead
+# If you have Python 3.13+, you must install Python 3.9-3.12 to use GAIA
+pybamm>=23.1
+
+# GUI Framework
+PyQt5>=5.15.0
+pyqtgraph>=0.12.0
+
+# Data Processing and Logging
+pandas>=1.3.0
+
+# Parallel Processing (for scalability)
+joblib>=1.0.0
+
+# Configuration and Data Formats
+pyyaml>=6.0
+
+# Optional: Database support for large-scale logging
+# sqlalchemy>=1.4.0
+# pymongo>=4.0.0  # For MongoDB support
+
+# Optional: Machine Learning for advanced SOC estimation
+# scikit-learn>=1.0.0
+# tensorflow>=2.8.0  # For neural network-based SOC estimation
+
+# Testing (development)
+pytest>=7.0.0
+pytest-cov>=3.0.0
+
+# Documentation
+sphinx>=4.0.0
+sphinx-rtd-theme>=1.0.0
+
+>>>>>>> e25e88bc9d309c3e29a000420b6d5c43e3c84787
