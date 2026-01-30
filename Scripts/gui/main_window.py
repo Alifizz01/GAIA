@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QMessageBox
 from PyQt5.QtCore import QTimer
 import sys
 import os
@@ -30,20 +30,48 @@ class AppWindow(QMainWindow):
         control_panel = QVBoxLayout()
         configuration_panel = QVBoxLayout()
         
-        # Dropdowns
-        self.simulation_mode = CustomComboBox("Simulation Mode", ["Manual Parameter Mode", "Experiment Mode"])
-        self.cell_type = CustomComboBox("Cell Type", ["NMC", "LFP", "NCA"])
-        self.model_type = CustomComboBox("Model", ["SPM", "SPMe", "DFN"])
-        self.cell_config = CustomComboBox("Cell Config", ["6s74p", "8s24p", "12s48p", "14s96p", "16s1p"])
-        self.mode_config = CustomComboBox("Charging/Discharging Mode", ["Charging", "Discharging"])
+        # Dropdowns with default values
+        self.simulation_mode = CustomComboBox(
+            "Simulation Mode", 
+            ["Manual Parameter Mode", "Experiment Mode"],
+            default_value="Manual Parameter Mode"
+        )
+        self.cell_type = CustomComboBox(
+            "Cell Type", 
+            ["NMC", "LFP", "NCA"],
+            default_value="NMC"
+        )
+        self.model_type = CustomComboBox(
+            "Model", 
+            ["SPM", "SPMe", "DFN"],
+            default_value="SPM"
+        )
+        self.cell_config = CustomComboBox(
+            "Cell Config", 
+            ["6s74p", "8s24p", "12s48p", "14s96p", "16s1p"],
+            default_value="16s1p"
+        )
+        self.mode_config = CustomComboBox(
+            "Charging/Discharging Mode", 
+            ["Charging", "Discharging"],
+            default_value="Discharging"
+        )
 
-        # Sliders
-        self.c_rate_slider = CustomSlider("C-Rate", 1, 50, 10, 0)
-        self.voltage_slider = CustomSlider("Voltage (V)", 20, 40, 5, 0)
+        # Sliders with default values
+        self.c_rate_slider = CustomSlider("C-Rate", 1, 50, 10, 10)  # Default: 1.0C rate
+        self.voltage_slider = CustomSlider("Voltage (V)", 20, 40, 5, 30)  # Default: 30V
 
-        # Line Edit
-        self.simulation_time_lineEdit = CustomLineEdit("Simulation Time")
-        self.initial_temperature_lineEdit = CustomLineEdit("Initial Temperature")
+        # Line Edit with default values
+        self.simulation_time_lineEdit = CustomLineEdit(
+            "Simulation Time (seconds)", 
+            placeholder_text="Enter simulation duration in seconds",
+            default_value="3600"  # Default: 1 hour (3600 seconds)
+        )
+        self.initial_temperature_lineEdit = CustomLineEdit(
+            "Initial Temperature (°C)", 
+            placeholder_text="Enter temperature in Celsius",
+            default_value="25"  # Default: 25°C (will be converted to Kelvin)
+        )
 
         # Buttons
         self.control_buttons = CustomButton(["Start", "Stop", "Reset"])
@@ -95,14 +123,83 @@ class AppWindow(QMainWindow):
         # Timer for Updating Graphs
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_graph)
+        
+        # Check PyBaMM availability on startup
+        self._check_pybamm_availability()
+
+    def _check_pybamm_availability(self):
+        """Check if PyBaMM parameter sets are available and show warning if not."""
+        try:
+            import pybamm
+            # Try to load a common parameter set
+            try:
+                pybamm.ParameterValues("Ai2020")
+                return True  # PyBaMM is available
+            except Exception:
+                # Parameter sets not available
+                self._show_pybamm_warning()
+                return False
+        except ImportError:
+            # PyBaMM not installed
+            self._show_pybamm_warning(installed=False)
+            return False
+    
+    def _show_pybamm_warning(self, installed=True):
+        """Show a warning message about PyBaMM parameter sets."""
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Warning)
+        msg.setWindowTitle("PyBaMM Configuration Warning")
+        
+        if installed:
+            msg.setText("PyBaMM parameter sets are not available.\n\nSimulation may fail until fixed.")
+            detailed_text = (
+                "PyBaMM is installed but parameter sets are missing.\n\n"
+                "QUICK FIX:\n"
+                "  Run this command in your terminal:\n"
+                "  python fix_pybamm_params.py\n\n"
+                "OR manually:\n"
+                "  1. pip uninstall pybamm\n"
+                "  2. pip install pybamm\n"
+                "  3. Or: pip install pybamm[all]\n\n"
+                "See INSTALL_PYBAMM_PARAMS.md for detailed instructions.\n\n"
+                "You can continue, but simulations will fail until PyBaMM parameter sets are installed."
+            )
+        else:
+            msg.setText("PyBaMM is not installed.\n\nSimulation will not work until PyBaMM is installed.")
+            detailed_text = (
+                "PyBaMM is required for battery simulations.\n\n"
+                "Please install PyBaMM:\n"
+                "  pip install pybamm\n\n"
+                "Or with all extras:\n"
+                "  pip install pybamm[all]\n\n"
+                "See INSTALL_PYBAMM_PARAMS.md for detailed instructions."
+            )
+        
+        msg.setDetailedText(detailed_text)
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.exec_()  # Show warning but allow user to continue
 
     def start_simulation(self):
-        """Fetch GUI inputs and run the simulation."""
         try:
-            simu_time_int = int(self.simulation_time_lineEdit.get_text().strip())
-            temp_str = self.initial_temperature_lineEdit.get_text().strip()
+            # Get simulation time with default
+            simu_time_str = self.simulation_time_lineEdit.get_text().strip()
+            if simu_time_str == "":
+                simu_time_int = 3600  # Default: 1 hour
+            else:
+                simu_time_int = int(simu_time_str)
             
-            initial_temperature = 298.15 if not temp_str else float(temp_str)
+            # Get temperature with default
+            temp_str = self.initial_temperature_lineEdit.get_text().strip()
+            if temp_str == "" or temp_str is None:
+                initial_temperature = 298.15  # Default to 25°C in Kelvin
+            else:
+                temp_value = float(temp_str)
+                # If temperature is in reasonable Celsius range (0-100), convert to Kelvin
+                if temp_value < 100:
+                    initial_temperature = temp_value + 273.15  # Convert Celsius to Kelvin
+                else:
+                    initial_temperature = temp_value  # Already in Kelvin
+
             model_type = self.model_type.get_value()
             chemistry = self.cell_type.get_value()
             simulation_mode = self.simulation_mode.get_value()
@@ -113,23 +210,70 @@ class AppWindow(QMainWindow):
             self.simulator_manager = SimulatorManager(model_type, chemistry, initial_temperature)
 
             if simulation_mode == "Experiment Mode":
-                experiment_loaded = self.simulator_manager.load_experiment()
-                if experiment_loaded is not None:
-                    print("Experiment loaded successfully.")
-                else:
-                    print("Error loading experiment. Simulation aborted.")
-                    return
+                experiment_data = self.simulator_manager.load_experiment()
+                if not experiment_data:
+                    print("Failed to load experiment!")
+                    return  # Stop execution if loading fails
+                # Experiment simulation is already run inside load_experiment()
+                print("Experiment loaded and simulation completed.")
             else:
                 self.simulator_manager.run_battery_simulation(simu_time_int)
 
-            # Start real-time graph updates
+            # Start timer to update graph
             self.simulation_running = True
             self.timer.start(1000)
 
         except ValueError as e:
-            print(f"Invalid input! Error: {e}")
-
-
+            error_msg = str(e).encode('ascii', 'replace').decode('ascii')  # Handle encoding issues
+            self._show_error("Invalid Input", f"Please check your input values:\n{error_msg}")
+            print(f"Invalid input! Error: {error_msg}")
+        except RuntimeError as e:
+            # PyBaMM parameter set error
+            error_msg = str(e).encode('ascii', 'replace').decode('ascii')
+            self._show_pybamm_error(error_msg)
+            print(f"PyBaMM Error: {error_msg}")
+        except Exception as e:
+            error_msg = str(e).encode('ascii', 'replace').decode('ascii')  # Handle encoding issues
+            self._show_error("Simulation Error", f"An error occurred during simulation:\n{error_msg}")
+            print(f"Error: {error_msg}")
+            import traceback
+            traceback.print_exc()
+    
+    def _show_error(self, title, message):
+        """Show an error message dialog."""
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Critical)
+        msg.setWindowTitle(title)
+        msg.setText(message)
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.exec_()
+    
+    def _show_pybamm_error(self, error_message):
+        """Show a detailed PyBaMM error message with instructions."""
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Critical)
+        msg.setWindowTitle("PyBaMM Configuration Error")
+        msg.setText("PyBaMM parameter sets are not available.")
+        
+        detailed_text = (
+            f"Error Details:\n{error_message}\n\n"
+            "SOLUTION:\n"
+            "1. Run this command in your terminal:\n"
+            "   python fix_pybamm_params.py\n\n"
+            "2. OR manually install/reinstall PyBaMM:\n"
+            "   pip uninstall pybamm\n"
+            "   pip install pybamm\n\n"
+            "3. OR install with all extras:\n"
+            "   pip install pybamm[all]\n\n"
+            "4. Check PyBaMM installation:\n"
+            "   python -c \"import pybamm; print(pybamm.__version__)\"\n\n"
+            "See INSTALL_PYBAMM_PARAMS.md for detailed instructions."
+        )
+        
+        msg.setDetailedText(detailed_text)
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.exec_()
+            
     def update_graph(self):
         """Retrieve simulation data and update the graph."""
         if self.simulator_manager and self.simulation_running:
@@ -140,8 +284,6 @@ class AppWindow(QMainWindow):
                 self.soc_graph.update_plot(time_data, soc_data)
                 self.temperature_graph.update_plot(time_data, temperature_data)
                 self.current_graph.update_plot(time_data, current_data)
-
-                print(f"Graph updated: Time steps = {len(time_data)}")
 
     def stop_simulation(self):
         if self.simulator_manager:

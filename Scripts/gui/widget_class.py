@@ -4,12 +4,21 @@ import pyqtgraph as pg
 
 # Class for Dropdown (ComboBox)
 class CustomComboBox(QVBoxLayout):
-    def __init__(self, label_text, options, width=300):
+    def __init__(self, label_text, options, width=300, default_value=None):
         super().__init__()
         self.label = QLabel(label_text)
         self.combo_box = QComboBox()
         self.combo_box.setFixedWidth(width)
         self.combo_box.addItems(options)
+        
+        # Set default value if provided
+        if default_value is not None:
+            if default_value in options:
+                index = options.index(default_value)
+                self.combo_box.setCurrentIndex(index)
+            elif isinstance(default_value, int) and 0 <= default_value < len(options):
+                self.combo_box.setCurrentIndex(default_value)
+        
         self.addWidget(self.label)
         self.addWidget(self.combo_box)
 
@@ -46,7 +55,7 @@ class CustomButton(QHBoxLayout):
         return self.buttons[btn_text]
     
 class CustomLineEdit(QVBoxLayout):
-    def __init__(self, label, button_text="OK", placeholder_text="Enter text"):
+    def __init__(self, label, button_text="OK", placeholder_text="Enter text", default_value=""):
         """Custom input field with label and button."""
         super().__init__()
 
@@ -59,6 +68,8 @@ class CustomLineEdit(QVBoxLayout):
         # Text input field
         self.text_field = QLineEdit()
         self.text_field.setPlaceholderText(placeholder_text)
+        if default_value:
+            self.text_field.setText(str(default_value))
 
         # OK button
         self.ok_button = QPushButton(button_text)
