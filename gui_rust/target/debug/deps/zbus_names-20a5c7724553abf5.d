@@ -1,0 +1,14 @@
+/home/user/GAIA/gui_rust/target/debug/deps/zbus_names-20a5c7724553abf5.d: /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/lib.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/bus_name.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/unique_name.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/well_known_name.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/interface_name.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/member_name.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/error.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/error_name.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/utils.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/../README.md
+
+/home/user/GAIA/gui_rust/target/debug/deps/libzbus_names-20a5c7724553abf5.rmeta: /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/lib.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/bus_name.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/unique_name.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/well_known_name.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/interface_name.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/member_name.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/error.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/error_name.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/utils.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/../README.md
+
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/lib.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/bus_name.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/unique_name.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/well_known_name.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/interface_name.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/member_name.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/error.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/error_name.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/utils.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_names-2.6.1/src/../README.md:
