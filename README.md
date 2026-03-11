@@ -579,37 +579,11 @@ class CustomBalancer(BatteryBalancer):
 
 ---
 
-## 🤝 Contributing
-
-Contributions are welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
----
-
 ## 🙏 Acknowledgments
 
 - **PyBaMM**: Advanced battery modeling library
 - **PyQt5**: GUI framework
 - **NumPy/SciPy**: Scientific computing foundation
-
----
-
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/yourusername/GAIA/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/GAIA/discussions)
-- **Email**: gaia@example.com
 
 ---
 
