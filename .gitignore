@@ -56,6 +56,9 @@ htmlcov/
 # Documentation
 docs/_build/
 
+# Rust build artifacts
+gui_rust/target/
+
 # Temporary files
 *.tmp
 *.temp
