@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Python
 __pycache__/
 *.py[cod]
@@ -61,67 +60,3 @@ docs/_build/
 *.tmp
 *.temp
 
-=======
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Virtual Environment
-venv/
-ENV/
-env/
-.venv
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# GAIA Specific
-logs/
-*.log
-*.csv
-*.json
-!Scripts/data/*.json
-!Scripts/tests/*.json
-
-# PyBaMM cache
-.pybamm_cache/
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Test coverage
-.coverage
-htmlcov/
-.pytest_cache/
-
-# Documentation
-docs/_build/
-
-# Temporary files
-*.tmp
-*.temp
-
->>>>>>> e25e88bc9d309c3e29a000420b6d5c43e3c84787
