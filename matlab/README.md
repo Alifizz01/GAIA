@@ -1,5 +1,7 @@
 # GAIA in MATLAB and Simulink
 
+Verified on MATLAB R2025a (Simulink) with Python 3.12.
+
 GAIA's pack model and BMS run in Python; these files let MATLAB and Simulink drive
 them through MATLAB's built-in Python interface. No server, no copies of the
 physics: results are identical to GAIA Studio and the Python API.

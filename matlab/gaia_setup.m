@@ -23,5 +23,6 @@ function gaia_setup(pythonExe)
         insert(sysPath, int32(0), repo);
     end
     gaia = py.importlib.import_module('gaia');
-    fprintf('GAIA %s via Python %s\n', char(gaia.('__version__')), char(pyenv().Version));
+    % dunder names are not reachable with MATLAB dot syntax; ask Python
+    fprintf('GAIA %s via Python %s\n', char(py.getattr(gaia, '__version__')), char(pyenv().Version));
 end

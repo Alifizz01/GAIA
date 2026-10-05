@@ -19,7 +19,7 @@ T3 = pack.runFor(1200);
 T = [T1; T2; T3];
 figure('Name', 'GAIA pack from MATLAB');
 tiledlayout(3, 1);
-nexttile; plot(T.time_s/60, T.soc_true_pct, 'k--', T.time_s/60, T.soc_estimated_pct, 'LineWidth', 1.5);
+nexttile; plot(T.time_s/60, T.soc_true_pct, '--', 'Color', [0.55 0.55 0.55], 'LineWidth', 2.5); hold on; plot(T.time_s/60, T.soc_estimated_pct, 'LineWidth', 1.2); hold off
 ylabel('SOC [%]'); legend('true', 'BMS estimate'); title('GAIA: 12s NMC pack under BMS control');
 nexttile; plot(T.time_s/60, T.pack_current_A, 'LineWidth', 1.5); ylabel('current [A]');
 nexttile; plot(T.time_s/60, T.max_temperature_C, 'LineWidth', 1.5); ylabel('hottest cell [degC]'); xlabel('time [min]');

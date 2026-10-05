@@ -26,7 +26,10 @@ classdef GaiaBMS < matlab.System
     methods (Access = protected)
         function setupImpl(obj)
             bridge = py.importlib.import_module('gaia.matlab_bridge');
-            obj.Pack = bridge.MatlabPack(obj.CellsInSeries, obj.Chemistry, obj.CapacityAh, ...
+            % The block dialog can hand text parameters over with their quotes
+            % ('NMC' arrives as "'NMC'"), so strip them before Python sees it.
+            chemistry = char(strtrim(erase(string(obj.Chemistry), ["'", '"'])));
+            obj.Pack = bridge.MatlabPack(obj.CellsInSeries, chemistry, obj.CapacityAh, ...
                                          obj.InitialSoc, obj.AmbientC);
         end
 

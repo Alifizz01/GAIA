@@ -117,6 +117,13 @@ SOC estimate, true SOC, hottest cell, BMS state and fault flag out), and
 `build_gaia_simulink_demo` builds a ready-to-run model around it. Replace its load profile with your
 own charger or traction controller to close the loop.
 
+| The generated model | 45 minutes of a 0 to 1.5C drive profile |
+|---|---|
+| ![GaiaBMS block in Simulink](assets/matlab_simulink_model.png) | ![Simulink result: SOC, voltage and current, hottest cell](assets/matlab_simulink_demo.png) |
+
+Verified on MATLAB R2025a with Simulink and Python 3.12: the `GaiaPack` fault scenario (trip, refused
+reset, recovery) and the Simulink demo (SOC 90 % to 26 %, estimate within 0.1 %).
+
 ---
 
 ## Test battery controllers with XiLoop
