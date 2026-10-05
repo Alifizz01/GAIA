@@ -47,15 +47,15 @@ class BatteryPack:
         # Create battery model for cell-level simulation
         self.cell_model = BatteryModel(model_type, chemistry, initial_temperature)
         
-        # Initialize cell states
-        self.cells: List[List[CellState]] = []
-        self._initialize_cells(initial_temperature)
-        
-        # Pack-level parameters
+        # Pack-level parameters (set before the cells, which are built from them)
         self.nominal_voltage_per_cell = 3.7  # V
         self.nominal_capacity_per_cell = 50  # Ah (typical)
         self.pack_voltage = self.nominal_voltage_per_cell * cells_in_series
         self.pack_capacity = self.nominal_capacity_per_cell * cells_in_parallel
+
+        # Initialize cell states
+        self.cells: List[List[CellState]] = []
+        self._initialize_cells(initial_temperature)
         
         # Balancing parameters
         self.balancing_enabled = False

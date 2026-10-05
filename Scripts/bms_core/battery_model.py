@@ -1,6 +1,20 @@
 import numpy as np
 import pybamm
 
+
+def _entries(solution, *names):
+    """First of `names` the solution provides, or None.
+
+    `name in solution` does not work: PyBaMM's Solution has no __contains__,
+    so Python falls back to iterating it and raises TypeError.
+    """
+    for name in names:
+        try:
+            return solution[name].entries
+        except KeyError:
+            continue
+    return None
+
 class BatteryModel:
     # Parameter set names for different chemistries (ordered by likelihood of availability)
     # Using lazy initialization to handle cases where parameter sets might not be available
@@ -134,14 +148,24 @@ class BatteryModel:
 
     def run_simulation(self, duration=3600):
         """Run simulation with the latest parameters."""
-        solution = self.simulation.solve([0, duration])
+        # Ask for a dense output grid. With only [0, duration] the solver
+        # returns its own few steps and every curve between them is a
+        # straight line. (t_interp needs PyBaMM >= 24.5; older versions
+        # take the grid as t_eval.)
+        grid = np.linspace(0, duration, max(200, min(int(duration) + 1, 2000)))
+        try:
+            solution = self.simulation.solve([0, duration], t_interp=grid)
+        except TypeError:
+            solution = self.simulation.solve(grid)
         return solution
     
     def get_voltage(self, solution, time_data):
         """Extract voltage and resample it to match `time_data`."""
         try:
             original_time = solution["Time [s]"].entries
-            original_voltage = solution["Terminal voltage [V]"].entries
+            original_voltage = _entries(solution, "Voltage [V]", "Terminal voltage [V]")
+            if original_voltage is None:
+                raise KeyError("Voltage [V]")
             return np.interp(time_data, original_time, original_voltage)
         except KeyError as e:
             raise KeyError(f"Required solution variable not found: {e}. Make sure the simulation completed successfully.")
@@ -149,26 +173,20 @@ class BatteryModel:
     def get_soc(self, solution, time_data):        
         original_time = solution["Time [s]"].entries
         
-        # Try to get SOC directly from solution (preferred method)
-        try:
-            if "State of Charge" in solution:
-                original_soc = solution["State of Charge"].entries * 100  # Convert from fraction to percentage
-            elif "SoC" in solution:
-                original_soc = solution["SoC"].entries * 100
+        # Preferred: SOC from the charge actually drawn, which PyBaMM tracks
+        # exactly. Starts from the initial SOC (100 % unless configured).
+        original_soc = _entries(solution, "State of Charge", "SoC")
+        if original_soc is not None:
+            original_soc = original_soc * 100
+        else:
+            drawn = _entries(solution, "Discharge capacity [A.h]")
+            nominal = self.parameter_values.get("Nominal cell capacity [A.h]")
+            if drawn is not None and nominal:
+                original_soc = 100.0 * (1.0 - drawn / nominal)
             else:
-                raise KeyError("SOC not directly available in solution")
-        except (KeyError, AttributeError):
-            # Fallback: Calculate SOC from voltage and OCV parameters
-            try:
-                V_100 = self.parameter_values["Open-circuit voltage at 100% SOC [V]"]
-                V_0 = self.parameter_values["Open-circuit voltage at 0% SOC [V]"]
-                original_voltage = solution["Terminal voltage [V]"].entries
-                original_soc = ((original_voltage - V_0) / (V_100 - V_0)) * 100
-            except KeyError:
-                # If parameters don't exist, use a simple linear approximation
-                # This is a fallback and may not be accurate
+                # Last resort, and not accurate: stretch the voltage range.
                 print("Warning: SOC calculation using fallback method. Results may not be accurate.")
-                original_voltage = solution["Terminal voltage [V]"].entries
+                original_voltage = _entries(solution, "Voltage [V]", "Terminal voltage [V]")
                 v_min, v_max = original_voltage.min(), original_voltage.max()
                 original_soc = ((original_voltage - v_min) / (v_max - v_min)) * 100
         
@@ -178,13 +196,8 @@ class BatteryModel:
         """Extract temperature and resample it to match `time_data`."""
         try:
             original_time = solution["Time [s]"].entries
-            # Try volume-averaged temperature first, fallback to other temperature variables
-            if "Volume-averaged cell temperature [K]" in solution:
-                original_temperature = solution["Volume-averaged cell temperature [K]"].entries
-            elif "Cell temperature [K]" in solution:
-                original_temperature = solution["Cell temperature [K]"].entries
-            else:
-                # If temperature is not available, return initial temperature as constant
+            original_temperature = _entries(solution, "Volume-averaged cell temperature [K]", "Cell temperature [K]")
+            if original_temperature is None:
                 print("Warning: Temperature data not available in solution. Using initial temperature.")
                 return np.full_like(time_data, self.parameter_values["Initial temperature [K]"])
             return np.interp(time_data, original_time, original_temperature)

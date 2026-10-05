@@ -167,14 +167,14 @@ class SimulationHardwareInterface(HardwareInterface):
         self.cell_models: List[BatteryModel] = []
         self._initialize_cell_models()
         
-        # Cell states (voltage, current, temperature, SOC)
-        self.cell_states: List[Dict] = []
-        self._initialize_cell_states()
-        
-        # Control states
+        # Control states (before the cell states, which fill balancing_enabled)
         self.charge_enabled = False
         self.discharge_enabled = False
         self.balancing_enabled: Dict[int, bool] = {}
+
+        # Cell states (voltage, current, temperature, SOC)
+        self.cell_states: List[Dict] = []
+        self._initialize_cell_states()
         
         # Simulation state
         self.current_time = 0.0
