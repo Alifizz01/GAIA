@@ -114,6 +114,7 @@ def pack_state(_=None):
         "soc_estimated": status.pack_soc,
         "soc_true": float(np.mean([c["soc"] for c in hw.cell_states])),
         "charge_contactor": hw.charge_enabled, "discharge_contactor": hw.discharge_enabled,
+        "ambient_c": hw.ambient_temperature - 273.15,
         "faults": list(dict.fromkeys(f.value for f in status.active_faults)),
         "latched": [f.value for f in ctrl.latched_faults],
         "energy_out_wh": ctrl.total_energy_discharged, "energy_in_wh": ctrl.total_energy_charged,

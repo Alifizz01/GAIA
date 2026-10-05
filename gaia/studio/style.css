@@ -1,6 +1,7 @@
 /* GAIA Studio - a pack monitor: sage panels, emerald actions, copper busbars.
    The signature is the pack view: every cell a gauge filled to its SOC and
    coloured by its temperature. */
+.card.system canvas { display: block; width: 100%; height: 250px; }
 :root {
   --bg: #EEF1EE;
   --surface: #FFFFFF;

@@ -45,6 +45,17 @@ works, and anyone who needs realistic Li-ion behaviour without lab hardware.
 
 A native desktop window (`gaia studio`) around the local REST API, with three workspaces.
 
+<img src="assets/studio_system.png" alt="System view: charger, contactors, pack with BMS, inverter and motor, with current flowing" width="900">
+
+**System view.** The pack in its circuit: charger, charge and discharge contactors, the series string
+with its BMS board and sense wires, inverter and motor. Everything drawn is read from the model: the
+contactors open and close with the BMS, current moves at a speed set by the measured pack current and
+in its real direction (discharge, charge, or regenerative braking), each cell is filled to its true SOC
+with the BMS estimate as a tick, and coloured by its temperature. **Conditions** set what the pack lives
+through: ambient temperature, and a manual, pulsed or synthetic drive-cycle load. The profiles are test
+inputs, not a standard cycle; above the BMS limits (100 A discharge, 50 A charge) they trip it, which is
+the protection doing its job.
+
 | | |
 |---|---|
 | ![Pack under 1C discharge with balancing](assets/studio_pack.png) | ![Over-temperature trip: emergency, contactors open, reset refused](assets/studio_trip.png) |
