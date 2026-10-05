@@ -1,0 +1,24 @@
+name: ci
+on: [push, pull_request]
+
+jobs:
+  test:
+    name: test (python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - run: pip install -e .[dev] git+https://github.com/Alifizz01/XiLoop
+      - run: pytest -q
+      - name: SOC accuracy against PyBaMM truth
+        run: |
+          for chem in NMC LFP NCA; do gaia benchmark --chemistry $chem; done | tee -a $GITHUB_STEP_SUMMARY
+      - name: Pack demo (trip and reset)
+        run: python examples/bms_pack_demo.py

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 80" width="360" height="80">
+  <title>GAIA</title>
+  <g transform="translate(8 8)">
+    <rect width="64" height="64" rx="14" fill="#13201B"/>
+    <path d="M6 50 A 40 40 0 0 1 58 50" fill="none" stroke="#2C4A3F" stroke-width="3" stroke-linecap="round"/>
+    <rect x="27" y="9" width="10" height="5" rx="1.5" fill="#C9874F"/>
+    <rect x="20" y="13" width="24" height="42" rx="5" fill="#13201B" stroke="#C9D3CD" stroke-width="2.6"/>
+    <rect x="24.5" y="39" width="15" height="11" rx="2" fill="#1FA37F"/>
+    <rect x="24.5" y="28.5" width="15" height="9" rx="2" fill="#17866A"/>
+    <rect x="24.5" y="18" width="15" height="9" rx="2" fill="#2C4A3F"/>
+  </g>
+  <text x="88" y="49" font-family="Bahnschrift, 'DIN Alternate', 'Barlow Semi Condensed', 'Arial Narrow', sans-serif" font-size="42" font-weight="700" fill="#13201B" letter-spacing="3">GAIA</text>
+  <text x="90" y="68" font-family="Bahnschrift, 'DIN Alternate', 'Arial Narrow', sans-serif" font-size="10.5" fill="#5D6B64" letter-spacing="2.6">BATTERY MANAGEMENT SIMULATOR</text>
+</svg>

@@ -283,7 +283,8 @@ class SimulationHardwareInterface(HardwareInterface):
         # current between mismatched cells); model branches if that matters.
         branch = i / self.cells_in_parallel
         for cid, s in enumerate(self.cell_states):
-            ic = branch + (self.balance_current if self.balancing_enabled.get(cid) else 0.0)
+            # leak_current models an internal short: charge that drains inside the cell
+            ic = branch + (self.balance_current if self.balancing_enabled.get(cid) else 0.0) + s.get("leak_current", 0.0)
             s["current"] = ic
             s["soc"] = float(np.clip(s["soc"] - ic * dt / 3600.0 / s["capacity"] * 100.0, -5.0, 105.0))
             r1 = s["r1"]

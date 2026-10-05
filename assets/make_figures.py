@@ -54,4 +54,23 @@ ax.set_title("NMC rate capability: more current, more polarisation, lower voltag
 ax.legend(frameon=False, title="C-rate")
 fig.tight_layout()
 fig.savefig(os.path.join(HERE, "rate_capability.png"))
+# --- SOC estimator accuracy against PyBaMM truth
+from gaia.soc_benchmark import run_benchmark  # noqa: E402
+
+r = run_benchmark("NMC")
+fig, ax = plt.subplots(figsize=(7.2, 3.6))
+tm = r["t"] / 60
+ax.plot(tm, r["soc_true"], color=INK, lw=2.6, label="true SOC (PyBaMM SPMe)")
+names = {"COULOMB_COUNTING": ("Coulomb counting", "#B8642A"), "KALMAN_FILTER": ("EKF", "#2F6FDE"),
+         "AEKF": ("Adaptive EKF", "#0E7C66")}
+for key, (label, color) in names.items():
+    ax.plot(tm, r["estimates"][key], color=color, lw=1.6,
+            label=f"{label}: {r['rmse_after_10min'][key]:.1f} % RMSE")
+ax.set_xlabel("Time [min]")
+ax.set_ylabel("State of charge [%]")
+ax.set_title("SOC estimators vs electrochemical truth: 20 % wrong start, noisy, biased sensors",
+             loc="left", color=INK, fontsize=11)
+ax.legend(frameon=False, fontsize=9)
+fig.tight_layout()
+fig.savefig(os.path.join(HERE, "soc_accuracy.png"))
 print("figures written to", HERE)

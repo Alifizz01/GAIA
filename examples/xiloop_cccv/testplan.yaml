@@ -1,0 +1,33 @@
+# A CC-CV charger verified with XiLoop against a GAIA cell.
+#
+# The controller is XiLoop's PID regulating cell voltage to 4.1 V, with its
+# output limited to 5 A (1C for this 5 Ah cell): saturated = constant current,
+# regulating = constant voltage. The plant is a GAIA NMC cell starting at 20 %.
+#
+#   pip install xiloop
+#   xiloop run examples/xiloop_cccv/testplan.yaml --report cccv_report.md
+#
+# Raise kp to 100 and ki to 20 and REQ-CV-2 fails: the loop goes unstable and
+# the "charger" ends up discharging the cell.
+name: CC-CV charger on a GAIA NMC cell
+plant:
+  type: "gaia.xiloop_plant:GaiaCellPlant"
+  params: {chemistry: NMC, capacity: 5.0, initial_soc: 20.0}
+device:
+  type: pid
+  params: {kp: 50.0, ki: 5.0, kd: 0.0, out_max: 5.0}
+scenarios:
+  - {name: charge_to_4v1, setpoint: 4.1, duration: 7200, dt: 1.0}
+requirements:
+  - id: REQ-CV-1
+    description: never more than 20 mV above the 4.1 V charge limit (0.5 %)
+    metric: overshoot_pct
+    max: 0.5
+  - id: REQ-CV-2
+    description: holds 4.1 V within 5 mV at the end of charge
+    metric: steady_state_error
+    max: 0.005
+  - id: REQ-CC-1
+    description: charge current never exceeds 1C (5 A)
+    metric: peak_command
+    max: 5.0

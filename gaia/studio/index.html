@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GAIA Studio</title>
+<link rel="icon" href="logo-mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="uPlot.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="bar">
+  <div class="brand"><img src="logo-mark.svg" alt="" width="30" height="30"><span><b>GAIA</b> Studio</span></div>
+  <nav class="tabs" role="tablist" aria-label="Workspace">
+    <button class="tab" role="tab" data-page="pack" aria-selected="true">Pack</button>
+    <button class="tab" role="tab" data-page="cell" aria-selected="false">Cell lab</button>
+    <button class="tab" role="tab" data-page="soc" aria-selected="false">SOC lab</button>
+  </nav>
+  <div class="right"><i class="dot" id="conn"></i><span id="conn-text">connecting…</span></div>
+</header>
+
+<!-- ======================= PACK ======================= -->
+<section class="page" id="page-pack">
+  <aside class="side">
+    <div class="block">
+      <h2>Pack <small>build and reset</small></h2>
+      <div class="row2">
+        <label>Cells in series<input id="p-series" type="number" min="1" max="24" value="12"></label>
+        <label>Chemistry<select id="p-chem"><option>NMC</option><option>LFP</option><option>NCA</option></select></label>
+        <label>Cell capacity Ah<input id="p-cap" type="number" value="50"></label>
+        <label>Start SOC %<input id="p-soc" type="number" value="80"></label>
+      </div>
+      <label>Cell-to-cell spread<select id="p-spread"><option value="0">none</option><option value="1" selected>typical (1.5 % SOC, 2 % capacity)</option><option value="2">poorly matched (5 % SOC, 6 % capacity)</option></select></label>
+      <button class="ghost" id="p-build">Build new pack</button>
+    </div>
+    <div class="block">
+      <h2>Load <small>positive = discharge</small></h2>
+      <label>Requested current <span class="big" id="p-cur-v">50 A</span>
+        <input type="range" id="p-cur" min="-100" max="150" step="5" value="50"></label>
+      <div class="row">
+        <button class="ghost" data-c="1">Discharge 1C</button><button class="ghost" data-c="0">Rest</button><button class="ghost" data-c="-0.5">Charge C/2</button>
+      </div>
+      <label>Simulation speed</label>
+      <div class="seg" id="p-speed"><button data-v="1" aria-pressed="false">×1</button><button data-v="10" aria-pressed="false">×10</button><button data-v="60" aria-pressed="true">×60</button><button data-v="300" aria-pressed="false">×300</button></div>
+      <button class="primary" id="p-run">Run</button>
+      <p class="hint">Simulated time, not wall time: ×60 shows a minute of battery per second.</p>
+    </div>
+    <div class="block">
+      <h2>Faults <small>on cell <span id="p-sel">1</span></small></h2>
+      <p class="hint">Click a cell in the pack to select it.</p>
+      <div class="row">
+        <button class="ghost danger" data-f="overheat" title="cell heats to 65 C">Overheat</button>
+        <button class="ghost danger" data-f="short" title="internal short: drains at C/5">Internal short</button>
+        <button class="ghost danger" data-f="fade" title="capacity to 70 %">Aged cell</button>
+        <button class="ghost" data-f="heal">Heal</button>
+      </div>
+      <button class="ghost" id="p-reset">Reset latched fault</button>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="strip" id="p-strip"></div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:6px">
+        <h2>Pack <small id="p-pack-label"></small></h2>
+        <div class="legend"><span>temperature 20 °C<i class="scale"></i>60 °C</span><span>fill = true SOC</span><span>BAL = bleeding for balance</span></div>
+      </div>
+      <div class="busbar"></div>
+      <div class="pack" id="p-cells"></div>
+    </div>
+    <div class="grid2">
+      <div class="card"><h2>State of charge <small>BMS estimate vs truth</small></h2><div class="chart" id="p-chart-soc"></div></div>
+      <div class="card"><h2>Pack voltage and current</h2><div class="chart" id="p-chart-vi"></div></div>
+    </div>
+    <div class="grid2">
+      <div class="card"><h2>Hottest cell</h2><div class="chart" id="p-chart-t"></div></div>
+      <div class="card"><h2>BMS events</h2><ul class="events" id="p-events"></ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= CELL LAB ======================= -->
+<section class="page" id="page-cell" hidden>
+  <aside class="side">
+    <div class="block">
+      <h2>Electrochemical cell <small>PyBaMM</small></h2>
+      <div class="row2">
+        <label>Chemistry<select id="c-chem"><option>NMC</option><option>LFP</option><option>NCA</option></select></label>
+        <label>Model<select id="c-model"><option value="SPM">SPM</option><option value="SPMe" selected>SPMe</option><option value="DFN">DFN</option></select></label>
+      </div>
+      <label>C-rate <span class="big" id="c-rate-v">1 C</span><input type="range" id="c-rate" min="0.25" max="3" step="0.25" value="1"></label>
+      <label>Ambient °C<input id="c-temp" type="number" value="25"></label>
+      <label class="inline"><input type="checkbox" id="c-thermal" checked> Lumped thermal model</label>
+      <div class="row"><button class="primary" id="c-run">Simulate</button><button class="ghost" id="c-clear">Clear</button></div>
+      <p class="hint" id="c-status">Each run is overlaid, so chemistries, models and C-rates can be compared.</p>
+    </div>
+    <div class="block">
+      <h2>Models</h2>
+      <p class="hint"><b>SPM</b> single particle: fastest. <b>SPMe</b> adds electrolyte: good up to ~2C. <b>DFN</b> Doyle-Fuller-Newman: the full porous-electrode model, slowest.</p>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="card"><h2>Terminal voltage <small>vs state of charge</small></h2><div class="chart tall" id="c-chart-v"></div></div>
+    <div class="grid2">
+      <div class="card"><h2>Cell temperature</h2><div class="chart" id="c-chart-t"></div></div>
+      <div class="card"><h2>Runs</h2><table id="c-table"><thead><tr><th>Run</th><th>Capacity</th><th>Duration</th><th>Min V</th><th>Max T</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= SOC LAB ======================= -->
+<section class="page" id="page-soc" hidden>
+  <aside class="side">
+    <div class="block">
+      <h2>SOC estimators <small>vs electrochemical truth</small></h2>
+      <label>Chemistry<select id="s-chem"><option>NMC</option><option>LFP</option><option>NCA</option></select></label>
+      <label>BMS starting guess <span class="big" id="s-guess-v">80 %</span><input type="range" id="s-guess" min="40" max="100" step="5" value="80"></label>
+      <label>Voltage sensor noise mV<input id="s-vnoise" type="number" value="5"></label>
+      <label>Current sensor offset % of C<input id="s-offset" type="number" value="1" step="0.5"></label>
+      <button class="primary" id="s-run">Run benchmark</button>
+      <p class="hint" id="s-status"></p>
+    </div>
+    <div class="block">
+      <h2>What is being tested</h2>
+      <p class="hint">A PyBaMM SPMe cell runs a pulsed, drive-like load from 100 % SOC. The estimators only see noisy current and voltage, start from the wrong SOC, and do not share the truth model: the Kalman filters know just the chemistry's OCV curve and a guessed resistance.</p>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="meters" id="s-meters"></div>
+    <div class="card"><h2>State of charge <small>truth and three estimators</small></h2><div class="chart tall" id="s-chart"></div></div>
+    <div class="card"><h2>Load profile</h2><div class="chart" id="s-chart-i"></div></div>
+  </div>
+</section>
+
+<script src="uPlot.iife.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
