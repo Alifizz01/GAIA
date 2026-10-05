@@ -1,619 +1,191 @@
-# GAIA - Generalized Advanced Intelligent Analytics for Battery Management Systems
+<div align="center">
 
-![GAIA Logo](https://img.shields.io/badge/GAIA-BMS%20Framework-blue)
-![Python](https://img.shields.io/badge/python-3.9--3.12-green.svg)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+# GAIA
 
-## ⚠️ Python Version Requirement
+**A battery management system (BMS) simulator: physics-based lithium-ion cell models underneath,
+BMS algorithms on top, and a Rust desktop GUI.**
 
-**IMPORTANT**: GAIA requires **Python 3.9, 3.10, 3.11, or 3.12**.
+PyBaMM electrochemistry (SPM · SPMe · DFN) · SOC estimation (Coulomb counting · EKF · AEKF) · pack modelling ·
+balancing · protection · fault injection · charge control
 
-PyBaMM (the underlying battery modeling library) does not support Python 3.13+ yet. If you have Python 3.13 or later, please use Python 3.12 instead.
+![python](https://img.shields.io/badge/python-3.9–3.12-2F6FDE)
+![pybamm](https://img.shields.io/badge/PyBaMM-23.1%2B%20(tested%2026.9)-1E9E6A)
+![gui](https://img.shields.io/badge/GUI-Rust%20%2B%20egui-D9822B)
+![license](https://img.shields.io/badge/license-MIT-65707D)
 
-See [INSTALLATION.md](INSTALLATION.md) for detailed installation instructions and troubleshooting.
+<img src="assets/discharge_chemistries.png" alt="1C discharge curves for NMC, LFP and NCA cells simulated with GAIA" width="760">
 
----
-
-## 🌍 What is GAIA?
-
-**GAIA** stands for **Generalized Advanced Intelligent Analytics** - a comprehensive, enterprise-grade Battery Management System (BMS) simulation framework designed for large-scale applications with high scalability requirements.
-
-GAIA embodies the concept of "Mother Earth" - providing a nurturing, comprehensive environment where battery systems can be understood, simulated, and optimized. Just as Gaia represents the interconnected systems of our planet, GAIA represents the interconnected systems of modern battery technology.
-
-### The GAIA Philosophy
-
-- **Generalized**: Works with multiple battery chemistries (NMC, LFP, NCA, LMO, LTO) and configurations
-- **Advanced**: Implements state-of-the-art algorithms (AEKF, active balancing, thermal modeling)
-- **Intelligent**: Adaptive algorithms that learn and optimize battery performance
-- **Analytics**: Comprehensive data logging, monitoring, and analysis capabilities
+</div>
 
 ---
 
-## 🎯 Purpose and Vision
+## The problem
 
-GAIA is designed to be the most comprehensive, scalable, and user-friendly BMS simulation framework available. It addresses the critical need for accurate battery modeling and management in:
+A BMS decides when a battery may charge, how hard it may discharge, which cell needs balancing
+and when to open the contactor. Developing and validating that logic runs into the same walls:
 
-- **Electric Vehicles (EVs)**: Complete battery pack simulation for vehicle design
-- **Grid Storage Systems**: Large-scale battery array management
-- **Consumer Electronics**: Battery optimization for portable devices
-- **Research & Development**: Advanced battery modeling and algorithm development
-- **Educational Purposes**: Teaching battery management concepts
+| # | Problem | What it costs | How GAIA approaches it |
+|---|---|---|---|
+| 1 | **Real cells are slow to test against.** A single 1C cycle takes about two hours; an ageing or temperature study takes weeks. | Algorithm iterations are paced by the battery, not the engineer. | A full charge or discharge simulates in seconds, so a SOC estimator or charge profile can be iterated on in minutes. |
+| 2 | **The interesting cases are destructive.** Internal shorts, over-temperature and thermal runaway can't be provoked on a bench without risking the cell, the rig, or the lab. | Fault handling is the least tested part of most BMS code. | **Fault injection**: ten fault types (cell short, open circuit, over/under-voltage, over-current, over-temperature, resistance increase, capacity fade, thermal runaway, connection failure) applied to simulated cells. |
+| 3 | **Toy battery models hide the physics.** A linear voltage curve or a fixed resistor model has no rate-dependent polarisation and no chemistry-specific open-circuit voltage. | Algorithms tuned on toy models break on real cells, and the flat LFP plateau defeats voltage-based SOC. | Cells are simulated with **PyBaMM's electrochemical models** (single particle, single particle with electrolyte, Doyle-Fuller-Newman) using published parameter sets per chemistry. |
+| 4 | **Cell model and BMS logic live in different tools.** | Glue code, unit mismatches, and no single place to see cause and effect. | One Python package with the cell model, pack model, SOC estimation, balancing, protection and charge control, plus a Rust GUI on top. |
 
-### Key Capabilities
-
-✅ **Multi-Chemistry Support**: NMC, LFP, NCA, LMO, LTO batteries
-✅ **Advanced SOC Estimation**: Coulomb Counting, Kalman Filter, Adaptive Extended Kalman Filter (AEKF)
-✅ **Battery Pack Management**: Series-parallel configurations with cell-level monitoring
-✅ **Balancing Algorithms**: Passive and active (inductive/capacitive) balancing
-✅ **Fault Injection & Testing**: Comprehensive fault simulation for BMS validation
-✅ **Charging/Discharging Protocols**: CC-CV, fast charging, pulse charging, load profiles
-✅ **Thermal Modeling**: Temperature-dependent behavior and thermal runaway simulation
-✅ **Real-time Visualization**: Live monitoring with PyQt5 GUI
-✅ **High Scalability**: Parallel processing support for large battery packs
-✅ **Data Logging**: CSV/JSON logging with configurable intervals
+**Who it is for:** BMS and battery engineers prototyping algorithms, students learning how a BMS
+works, and anyone who needs realistic Li-ion behaviour without lab hardware.
 
 ---
 
-## 🏗️ Framework Architecture
+## Results
 
-### Core Components
+Both figures below are real GAIA simulations. Regenerate them with `python assets/make_figures.py`.
 
-#### 1. **Battery Model (`battery_model.py`)**
-The foundation of GAIA, implementing PyBaMM-based battery cell models with support for:
-- **Model Types**: Single Particle Model (SPM), Single Particle Model with electrolyte (SPMe), Doyle-Fuller-Newman (DFN)
-- **Chemistries**: Multiple pre-configured parameter sets for different battery types
-- **State Extraction**: Voltage, SOC, temperature, current extraction from simulations
-
-#### 2. **Battery Pack (`battery_pack.py`)**
-Manages series-parallel battery pack configurations:
-- **Pack Configuration**: Flexible `NsPp` (e.g., 16s1p, 8s24p) configurations
-- **Cell-Level Monitoring**: Individual cell state tracking
-- **Imbalance Detection**: Real-time cell imbalance analysis
-- **Faulty Cell Detection**: Automatic identification of problematic cells
-
-#### 3. **SOC Estimation (`soc_estimation.py`)**
-Three-tier SOC estimation system:
-- **Coulomb Counting**: Simple integration-based method
-- **Kalman Filter**: Extended Kalman Filter with voltage feedback
-- **AEKF**: Adaptive Extended Kalman Filter with noise adaptation for maximum accuracy
-
-#### 4. **Battery Balancing (`battery_balancing.py`)**
-Cell balancing algorithms:
-- **Passive Balancing**: Resistor-based dissipative balancing (simple, reliable)
-- **Active Balancing**: Energy transfer between cells (efficient, complex)
-  - Inductive balancing
-  - Capacitive balancing
-
-#### 5. **Fault Injection (`fault_injection.py`)**
-Comprehensive fault simulation:
-- **Fault Types**: Short circuit, open circuit, overvoltage, undervoltage, overcurrent, overtemperature, thermal runaway, capacity degradation
-- **Fault Scenarios**: Pre-configured scenarios for testing
-- **Realistic Modeling**: Severity-based fault injection
-
-#### 6. **Charging/Discharging (`charging_discharging_simulation.py`)**
-Advanced charge/discharge protocols:
-- **Charging Modes**: CC, CV, CC-CV, fast charging, trickle charging, pulse charging
-- **Discharging Modes**: Constant current, constant power, constant resistance, load profiles
-- **Profile Management**: Customizable charging/discharging profiles
-
-#### 7. **Simulation Manager (`simulation_manager.py`)**
-Orchestrates all simulation components:
-- **Simulation Control**: Start, stop, pause simulations
-- **Experiment Mode**: Load custom PyBaMM experiments
-- **Data Management**: Results storage and retrieval
-
-#### 8. **Configuration Manager (`config_manager.py`)**
-Centralized configuration:
-- **JSON Configuration**: Human-readable configuration files
-- **Validation**: Automatic configuration validation
-- **Default Values**: Sensible defaults for all parameters
-
-#### 9. **Data Logger (`gui/data_logger.py`)**
-Comprehensive data logging:
-- **Formats**: CSV and JSON support
-- **Time-series Data**: Voltage, current, SOC, SOH, temperature, power, energy
-- **Export Options**: Easy data export for analysis
-
-#### 10. **GUI (`gui/main_window.py`, `gui/widget_class.py`)**
-Modern graphical interface:
-- **Real-time Plots**: Voltage, SOC, SOH, current, temperature, internal resistance
-- **Interactive Controls**: Sliders, dropdowns, input fields
-- **Configuration**: Easy parameter adjustment
-- **Monitoring**: Live simulation status
+| Chemistry matters | Current matters |
+|---|---|
+| ![1C discharge for NMC, LFP and NCA](assets/discharge_chemistries.png) | ![NMC discharge at 0.5C, 1C and 2C](assets/rate_capability.png) |
+| LFP's flat plateau (why voltage alone is a poor SOC sensor for LFP), NCA's steep knee near empty, and NMC's gradual slope, from published PyBaMM parameter sets. | Higher current means more polarisation and a lower terminal voltage at the same charge delivered: the effect a BMS current limit has to respect. |
 
 ---
 
-## 📊 Key Concepts Explained
+## Status
 
-### State of Charge (SOC)
-SOC represents the remaining charge in a battery as a percentage (0-100%). GAIA implements multiple estimation methods:
+Checked on 2026-10-05 with Python 3.12 and PyBaMM 26.9.
 
-1. **Coulomb Counting**: Integrates current over time (simple but prone to drift)
-2. **Kalman Filter**: Uses voltage measurements to correct coulomb counting (more accurate)
-3. **AEKF**: Adapts to changing conditions for maximum accuracy in dynamic environments
-
-### State of Health (SOH)
-SOH represents the battery's capacity relative to its original capacity. GAIA tracks SOH through:
-- Capacity fade modeling
-- Internal resistance increase
-- Cycle counting
-
-### Battery Pack Configuration
-GAIA supports flexible pack configurations:
-- **Series Cells (`Ns`)**: Increase voltage (e.g., 16 cells = 16 × 3.7V = 59.2V)
-- **Parallel Cells (`Pp`)**: Increase capacity (e.g., 24 parallel = 24 × 50Ah = 1200Ah)
-- **Example**: `16s24p` = 16 series × 24 parallel = 384 total cells
-
-### Cell Balancing
-Essential for pack longevity:
-- **Problem**: Cells age differently, causing SOC imbalance
-- **Passive Solution**: Discharge high cells via resistors (simple, inefficient)
-- **Active Solution**: Transfer energy from high to low cells (efficient, complex)
-
-### Thermal Modeling
-Critical for safety and performance:
-- **Temperature Effects**: Capacity, resistance, and lifespan all depend on temperature
-- **Thermal Runaway**: Exponential temperature rise that can cause catastrophic failure
-- **Cooling Systems**: Active cooling simulation support
-
-### Fault Types
-GAIA can simulate various fault conditions:
-- **Electrical Faults**: Short circuits, open circuits, connection failures
-- **Voltage Faults**: Overvoltage, undervoltage
-- **Current Faults**: Overcurrent conditions
-- **Thermal Faults**: Overtemperature, thermal runaway
-- **Aging Faults**: Capacity degradation, resistance increase
+| Component | Module | Status |
+|---|---|---|
+| Electrochemical cell simulation (SPM / SPMe / DFN; NMC, LFP, NCA, LMO, LTO) | `battery_model.py`, `simulation_manager.py` | ✅ Works. Voltage, SOC, current and temperature, sampled on a dense time grid |
+| SOC estimation: Coulomb counting, Kalman filter, adaptive EKF | `soc_estimation.py` | ✅ Works. The filters use a generic OCV curve, not the selected chemistry's |
+| Fault injection, 10 fault types with severity and start time | `fault_injection.py` | ✅ Works on cell state |
+| Charge / discharge control: CC, CV, CC-CV, fast, trickle, pulse; CC / CP / CR / profile | `charging_discharging_simulation.py` | ✅ Works step by step |
+| Series-parallel pack model (`NsPp`) with cell-level state and imbalance statistics | `battery_pack.py` | ✅ Works |
+| Passive and active balancing | `battery_balancing.py` | ⚠️ Detects SOC imbalance, but acts on voltage difference only |
+| Real-time BMS engine: hardware interface → BMS controller → protection | `simulation_engine.py`, `bms_controller.py`, `protection_system.py`, `hardware_interface.py` | 🚧 Runs, but pack-level SOC and temperature are not yet physically consistent (see Roadmap) |
+| Desktop GUI (Rust, egui) driving the Python simulation | `gui_rust/`, `Scripts/run_simulation.py` | ✅ Builds and launches |
+| Thermal behaviour | (PyBaMM option) | Cells are isothermal by default; a lumped thermal model is available in PyBaMM but not wired in yet |
+| Automated tests | | None yet |
 
 ---
 
-## 🚀 Getting Started
+## Architecture
 
-### Installation
-
-1. **Check Python Version** (Must be 3.9-3.12)
-```bash
-python --version
+```mermaid
+flowchart TB
+    subgraph GUI["Desktop GUI · Rust + egui"]
+        G[Configuration · plots]
+    end
+    R["run_simulation.py<br/>JSON in → GAIA_RESULT JSON out"]
+    subgraph CORE["bms_core · Python"]
+        SM[SimulatorManager] --> BM["BatteryModel<br/>PyBaMM SPM · SPMe · DFN"]
+        PK[BatteryPack · NsPp] --> BM
+        SOC["SOC estimation<br/>CC · EKF · AEKF"]
+        BAL["Balancing<br/>passive · active"]
+        FI[Fault injection]
+        CH["Charge / discharge control<br/>CC-CV · pulse · profiles"]
+        subgraph RT["Real-time BMS · in progress"]
+            HW[Hardware interface<br/>simulated or real] --> BMS[BMS controller] --> PR[Protection system]
+        end
+    end
+    G -- subprocess --> R --> SM
 ```
 
-2. **Clone the Repository**
-```bash
-git clone https://github.com/yourusername/GAIA.git
-cd GAIA
-```
+---
 
-3. **Create Virtual Environment (Recommended)**
-```bash
-python -m venv venv
-# Activate: venv\Scripts\activate (Windows) or source venv/bin/activate (macOS/Linux)
-```
+## Quick start
 
-4. **Install Dependencies**
-```bash
-pip install -r requirements.txt
-```
-
-5. **Install GAIA (Optional)**
-```bash
-pip install -e .
-```
-
-For detailed installation instructions, see [INSTALLATION.md](INSTALLATION.md).
-
-### Quick Start
-
-#### Command Line Usage
-
-```python
-from bms_core import BatteryModel, SimulatorManager
-
-# Create a battery model
-battery = BatteryModel(
-    model_type="SPM",
-    chemistry="NMC",
-    initial_temperature=298.15
-)
-
-# Run simulation
-solution = battery.run_simulation(duration=3600)  # 1 hour simulation
-```
-
-#### GUI Usage
+GAIA needs **Python 3.9 to 3.12**, because PyBaMM does not support 3.13 yet.
 
 ```bash
-python Scripts/gui/main_window.py
+git clone https://github.com/Alifizz01/GAIA && cd GAIA
+py -3.12 -m venv .venv            # Windows; on Linux/macOS: python3.12 -m venv .venv
+.venv\Scripts\activate            # Linux/macOS: source .venv/bin/activate
+pip install numpy scipy pybamm pandas joblib pyyaml matplotlib
 ```
 
-Or use the entry point:
-```bash
-gaia-simulator
-```
-
-#### Using Configuration Files
+Simulate a one-hour 1C discharge:
 
 ```python
-from bms_core import ConfigManager, SimulatorManager
+import sys; sys.path.insert(0, "Scripts")
+from bms_core import SimulatorManager
 
-# Load configuration
-config = ConfigManager("config.json")
-
-# Create simulator with config
-sim_manager = SimulatorManager(
-    model_type=config.get("battery.model_type"),
-    chemistry=config.get("battery.chemistry"),
-    initial_temperature=config.get("battery.initial_temperature")
-)
-
-# Run simulation
-sim_manager.run_battery_simulation(
-    duration=config.get("simulation.duration")
-)
+sim = SimulatorManager("SPMe", "NMC", 298.15)      # model, chemistry, temperature [K]
+sim.run_battery_simulation(3600)                   # seconds
+t, voltage, soc, temperature, current = sim.get_simulation_results()
+print(f"{voltage[0]:.2f} V -> {voltage[-1]:.2f} V, SOC {soc[0]:.0f} % -> {soc[-1]:.0f} %")
+# 4.08 V -> 3.40 V, SOC 100 % -> 0 %
 ```
 
----
-
-## 📖 Detailed Usage Examples
-
-### Example 1: Basic Battery Simulation
+### The BMS building blocks
 
 ```python
-from bms_core import BatteryModel
+from bms_core import (SOCEstimator, SOCEstimationMethod, FaultInjector, Fault, FaultType,
+                      ChargeDischargeSimulator, ChargingProfile, ChargingMode)
 
-# Initialize battery model
-battery = BatteryModel(
-    model_type="SPMe",  # Single Particle Model with electrolyte
-    chemistry="LFP",     # Lithium Iron Phosphate
-    initial_temperature=298.15
-)
+# SOC: adaptive extended Kalman filter fed with current and voltage
+est = SOCEstimator(method=SOCEstimationMethod.AEKF, nominal_capacity=50.0, initial_soc=100.0)
+for _ in range(600):
+    soc = est.update(current=25.0, voltage=3.95, dt=1.0)
 
-# Run simulation
-solution = battery.run_simulation(duration=7200)  # 2 hours
+# Faults: a 50 % severity internal short on cell (0, 0) from t = 10 s
+fi = FaultInjector()
+fi.inject_fault(Fault(fault_type=FaultType.CELL_SHORT, cell_position=(0, 0), severity=0.5, start_time=10.0))
+print(fi.apply_faults({"voltage": 3.7, "current": 0.0, "temperature": 298.15}, current_time=15.0))
+# {'voltage': 3.45, ...}
 
-# Extract data
-time = solution["Time [s]"].entries
-voltage = battery.get_voltage(solution, time)
-soc = battery.get_soc(solution, time)
-temperature = battery.get_temperature(solution, time)
+# Charging: one step of a CC-CV profile
+cccv = ChargingProfile(mode=ChargingMode.CONSTANT_CURRENT_CONSTANT_VOLTAGE,
+                       cc_current=1.0, cv_voltage=4.2, termination_current=0.05)
+step = ChargeDischargeSimulator(charging_profile=cccv).simulate_charging_step(
+    voltage=3.8, soc=50.0, temperature=298.15, dt=1.0, nominal_capacity=50.0)
+print(step)   # {'current': -50.0, 'phase': 'cc', ...}
 ```
 
-### Example 2: Battery Pack with Balancing
+### From the command line, or from another program
 
-```python
-from bms_core import BatteryPack, BatteryBalancer, BalancingMethod
-
-# Create 16s1p pack (16 cells in series)
-pack = BatteryPack(
-    cells_in_series=16,
-    cells_in_parallel=1,
-    chemistry="NMC"
-)
-
-# Create balancer
-balancer = BatteryBalancer(
-    method=BalancingMethod.PASSIVE,
-    balancing_threshold=0.02  # 2% SOC difference triggers balancing
-)
-
-# Check if balancing is needed
-if balancer.is_balancing_needed(pack):
-    # Perform balancing
-    results = balancer.balance(pack, dt=1.0)
-    print(f"Power dissipated: {results['power_dissipated']} W")
-```
-
-### Example 3: SOC Estimation with AEKF
-
-```python
-from bms_core import SOCEstimator, SOCEstimationMethod
-
-# Create SOC estimator
-soc_estimator = SOCEstimator(
-    method=SOCEstimationMethod.AEKF,
-    nominal_capacity=50.0,  # Ah
-    initial_soc=100.0
-)
-
-# Update SOC with measurements
-current = -2.0  # A (negative for charging)
-voltage = 3.8   # V
-dt = 1.0        # seconds
-
-soc = soc_estimator.update(current, voltage, dt)
-print(f"Current SOC: {soc:.2f}%")
-```
-
-### Example 4: Fault Injection Testing
-
-```python
-from bms_core import FaultInjector, FaultType, Fault
-
-# Create fault injector
-fault_injector = FaultInjector()
-
-# Inject a cell short fault
-fault = Fault(
-    fault_type=FaultType.CELL_SHORT,
-    cell_position=(0, 0),  # First cell
-    severity=0.5,  # 50% severity
-    start_time=10.0
-)
-fault_injector.inject_fault(fault)
-
-# Apply faults to cell state
-cell_state = {
-    "voltage": 3.7,
-    "current": 0.0,
-    "temperature": 298.15
-}
-
-modified_state = fault_injector.apply_faults(cell_state, current_time=15.0)
-print(f"Voltage after fault: {modified_state['voltage']} V")
-```
-
-### Example 5: Charging Simulation
-
-```python
-from bms_core import ChargeDischargeSimulator, ChargingMode, ChargingProfile
-
-# Create charging profile (CC-CV charging)
-profile = ChargingProfile(
-    mode=ChargingMode.CONSTANT_CURRENT_CONSTANT_VOLTAGE,
-    cc_current=1.0,  # 1C rate
-    cv_voltage=4.2,  # V
-    termination_current=0.05  # 0.05C termination
-)
-
-# Create simulator
-simulator = ChargeDischargeSimulator(charging_profile=profile)
-
-# Simulate charging step
-results = simulator.simulate_charging_step(
-    voltage=3.8,
-    soc=50.0,
-    temperature=298.15,
-    dt=1.0,
-    nominal_capacity=50.0
-)
-
-print(f"Charging current: {results['current']} A")
-print(f"Energy added: {results['energy_added']} Wh")
-```
-
----
-
-## 🔧 Configuration
-
-### Configuration File Structure
-
-Create a `config.json` file:
-
-```json
-{
-    "battery": {
-        "chemistry": "NMC",
-        "model_type": "SPM",
-        "nominal_capacity": 50.0,
-        "nominal_voltage": 3.7,
-        "initial_temperature": 298.15,
-        "initial_soc": 100.0
-    },
-    "pack": {
-        "cells_in_series": 16,
-        "cells_in_parallel": 1,
-        "balancing_enabled": true,
-        "balancing_method": "passive",
-        "balancing_threshold": 0.02
-    },
-    "simulation": {
-        "duration": 3600,
-        "time_step": 1.0,
-        "simulation_mode": "Manual Parameter Mode"
-    },
-    "soc_estimation": {
-        "method": "aekf",
-        "coulombic_efficiency": 0.98
-    },
-    "logging": {
-        "enabled": true,
-        "log_directory": "logs",
-        "log_format": "csv"
-    }
-}
-```
-
-See `config_example.json` for a complete example.
-
----
-
-## 🎛️ GUI Features
-
-The GAIA GUI provides:
-
-1. **Simulation Control**
-   - Start/Stop/Reset buttons
-   - Real-time status indicators
-
-2. **Configuration Panel**
-   - Simulation mode selection
-   - Battery chemistry selection
-   - Model type selection
-   - Pack configuration
-   - Charging/discharging mode
-
-3. **Parameter Adjustment**
-   - C-rate slider
-   - Voltage slider
-   - Simulation time input
-   - Initial temperature input
-
-4. **Real-time Visualization**
-   - Voltage vs Time
-   - SOC vs Time
-   - SOH vs Time
-   - Current vs Time
-   - Temperature vs Time
-   - Internal Resistance vs Time
-
----
-
-## 📈 Scalability Features
-
-GAIA is designed for large-scale applications:
-
-### 1. **Parallel Processing Support**
-```python
-from joblib import Parallel, delayed
-from bms_core import BatteryPack
-
-# Simulate multiple packs in parallel
-packs = [BatteryPack(16, 1) for _ in range(100)]
-
-results = Parallel(n_jobs=4)(
-    delayed(pack.get_pack_statistics)() for pack in packs
-)
-```
-
-### 2. **Batch Simulation**
-GAIA supports batch processing for parameter sweeps and optimization studies.
-
-### 3. **Memory Optimization**
-- Efficient data structures
-- Optional data streaming for large datasets
-- Configurable cache management
-
-### 4. **Distributed Computing Ready**
-Architecture supports distributed computing frameworks (Dask, Ray) for cluster-level simulations.
-
----
-
-## 🧪 Testing and Validation
-
-### Running Tests
+`run_simulation.py` takes JSON and prints one `GAIA_RESULT:{...}` line, which is how the Rust GUI talks to Python:
 
 ```bash
-pytest tests/
+python Scripts/run_simulation.py --params '{"model_type": "SPM", "chemistry": "LFP", "duration": 1800}'
 ```
 
-### Fault Scenario Testing
+### Desktop GUI
 
-```python
-from bms_core import FaultInjector
-
-fault_injector = FaultInjector()
-
-# Load predefined scenario
-scenario = fault_injector.create_fault_scenario("thermal_event")
-
-for fault in scenario:
-    fault_injector.inject_fault(fault)
+```bash
+cd gui_rust
+cargo build --release
+cargo run --release      # needs `python` on PATH with PyBaMM installed (the venv above)
 ```
 
 ---
 
-## 📚 Documentation
+## Repository layout
 
-- **API Documentation**: See `docs/` directory
-- **Usage Guide**: See `Scripts/docs/usage_guide.md`
-- **Research Notes**: See `Scripts/docs/research_notes.md`
-- **Installation Guide**: See [INSTALLATION.md](INSTALLATION.md)
-- **Quick Start**: See [QUICKSTART.md](QUICKSTART.md)
-
----
-
-## 🔬 Advanced Features
-
-### Custom Experiments
-
-Define custom PyBaMM experiments:
-
-```json
-{
-    "experiment_steps": [
-        "Discharge at C/10 for 10 hours or until 3.3 V",
-        "Rest for 1 hour",
-        "Charge at 1 A until 4.1 V",
-        "Hold at 4.1 V until 50 mA",
-        "Rest for 1 hour"
-    ],
-    "repeat": 3
-}
 ```
-
-### Machine Learning Integration
-
-GAIA's architecture supports ML-based SOC estimation:
-
-```python
-# Future: ML-based SOC estimator
-from bms_core import ML_SOCEstimator
-
-ml_estimator = ML_SOCEstimator(model_path="trained_model.h5")
+Scripts/
+  bms_core/            the framework: cell and pack models, SOC, balancing, protection, faults, charging
+  run_simulation.py    JSON bridge used by the GUI
+  data/                sample cell data and battery specs
+gui_rust/              desktop GUI (Rust, egui / eframe)
+assets/                README figures and the script that regenerates them
+config_example.json    example configuration for ConfigManager
 ```
 
 ---
 
-## 🛠️ Extending GAIA
+## Roadmap
 
-### Adding Custom Battery Chemistries
+- **Real-time BMS engine:** make pack-level SOC, energy and temperature physically consistent, and
+  verify that the protection system trips on over-temperature and over-current
+- **Balancing on SOC**, not only voltage, so it also works on flat-OCV chemistries like LFP
+- **Chemistry-aware SOC filters:** use each chemistry's open-circuit voltage curve from PyBaMM
+- **Thermal model:** enable PyBaMM's lumped thermal option so temperature responds to current
+- **Tests and CI:** regression tests against the figures above, run on every push
+- **GUI:** live pack view, fault-injection controls, and CSV export
 
-```python
-from bms_core import BatteryModel
-import pybamm
+## Built with
 
-# Add custom parameter set
-custom_params = pybamm.ParameterValues("CustomChemistry")
-BatteryModel.CHEMISTRY_PARAMETERS["Custom"] = custom_params
-```
+[PyBaMM](https://pybamm.org) for the electrochemistry, NumPy and SciPy, and
+[egui](https://github.com/emilk/egui) for the desktop interface.
 
-### Creating Custom Balancing Algorithms
+## License
 
-Extend the `BatteryBalancer` class:
-
-```python
-from bms_core import BatteryBalancer, BatteryPack
-
-class CustomBalancer(BatteryBalancer):
-    def balance(self, pack, dt):
-        # Your custom balancing logic
-        pass
-```
-
----
-
-## 🙏 Acknowledgments
-
-- **PyBaMM**: Advanced battery modeling library
-- **PyQt5**: GUI framework
-- **NumPy/SciPy**: Scientific computing foundation
-
----
-
-## 🔮 Roadmap
-
-Future enhancements:
-- [ ] Hardware-in-the-Loop (HIL) support
-- [ ] CAN bus integration
-- [ ] Cloud-based simulation platform
-- [ ] Advanced ML-based optimization
-- [ ] Multi-physics coupling (electro-thermal-mechanical)
-- [ ] Digital twin capabilities
-
----
-
-## 🌟 Key Differentiators
-
-What makes GAIA unique:
-
-1. **Comprehensive**: Covers all aspects of BMS from cell to pack level
-2. **Scalable**: Designed for both single-cell and large-scale pack simulations
-3. **Accurate**: State-of-the-art algorithms (AEKF, active balancing)
-4. **Extensible**: Modular architecture for easy customization
-5. **User-Friendly**: Intuitive GUI and clear API
-6. **Well-Documented**: Extensive documentation and examples
-
----
-
-**GAIA - Empowering the Future of Battery Technology** 🔋⚡
-
----
-
-*Version 1.0.0 | Last Updated: 2024*
+MIT, see [LICENSE](LICENSE).
