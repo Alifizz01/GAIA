@@ -10,8 +10,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(HERE, "..", "Scripts"))
-from bms_core import BatteryModel  # noqa: E402
+sys.path.insert(0, os.path.join(HERE, ".."))
+from gaia import BatteryModel  # noqa: E402
 
 INK, MUTED, GRID = "#1F2933", "#65707D", "#E3E7EC"
 COLORS = {"NMC": "#2F6FDE", "LFP": "#1E9E6A", "NCA": "#D9822B"}

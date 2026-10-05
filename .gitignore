@@ -1,65 +1,27 @@
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
 *.egg-info/
-.installed.cfg
-*.egg
+build/
+dist/
+.pytest_cache/
+.coverage
+htmlcov/
 
-# Virtual Environment
+# Virtual environments
+.venv/
 venv/
-ENV/
-env/
-.venv
+venv_*/
 
-# IDE
+# IDE / OS
 .vscode/
 .idea/
-*.swp
-*.swo
-*~
-
-# GAIA Specific
-logs/
-*.log
-*.csv
-*.json
-!Scripts/data/*.json
-!Scripts/tests/*.json
-
-# PyBaMM cache
-.pybamm_cache/
-
-# OS
 .DS_Store
 Thumbs.db
 
-# Test coverage
-.coverage
-htmlcov/
-.pytest_cache/
-
-# Documentation
-docs/_build/
-
-# Rust build artifacts
-gui_rust/target/
-
-# Temporary files
-*.tmp
-*.temp
-
+# GAIA run output (logs and exports, not the bundled data)
+logs/
+*.log
+*.csv
+!gaia/data/*.csv
+.pybamm_cache/
